@@ -37,9 +37,12 @@ Full flow, failure paths, and the quote lifecycle are documented in [docs/archit
 
 ## Demo
 
-- **Live app:** `http://localhost:3000` after `docker compose up --build` (or `npm run dev` in `frontend/` + `uvicorn app.main:app` in `backend/`).
+- **Live app:** [borderless-money-web.onrender.com](https://borderless-money-web.onrender.com )
+- **API health:** [borderless-money-api.onrender.com/api/health](https://borderless-money-api.onrender.com/api/health )
+- **Local app:** `http://localhost:3000` after `docker compose up --build`, or after running `npm run dev` in `frontend/` and `uvicorn app.main:app` in `backend/`.
 - **Bilingual UI:** `EN | বাংলা` toggle on all screens, persisted in `xpay-lang`; Bangla voice and numerals are handled end-to-end.
-- No public demo link is claimed in this repository — run the stack locally to reproduce the screenshots and metrics below.
+
+The live demo runs on Render’s free tier and may sleep after inactivity. It uses synthetic/demo data, and settlement and payout integrations remain simulated as described in [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md).
 
 ## Key features (verified in code)
 

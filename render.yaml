@@ -1,0 +1,26 @@
+# Render Blueprint for borderless-money.
+# The API uses the backend Docker image; the frontend runs as a Next.js web service.
+services:
+  - type: web
+    name: borderless-money-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: XPAY_CORS_ORIGINS
+        value: https://borderless-money-web.onrender.com,http://localhost:3000
+      - key: XPAY_RATE_LIMIT
+        value: 240/minute
+
+  - type: web
+    name: borderless-money-web
+    env: node
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE
+        value: https://borderless-money-api.onrender.com

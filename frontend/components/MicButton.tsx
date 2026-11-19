@@ -46,7 +46,7 @@ export default function MicButton({
       disabled={disabled || listening || unsupported}
       aria-label={listening ? titleListening : titleMic}
       title={unsupported ? titleUnsupported : titleMic}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition ${listening ? "border-[#E3E6EA] bg-[#F6F7F9] text-[#17181C]" : "border-[#E3E6EA] bg-white text-[#5C6470] hover:border-[#17181C] hover:text-[#17181C]"} disabled:opacity-40 disabled:cursor-not-allowed`}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition ${listening ? "border-[#0070E0] bg-[#E8F1FC] text-[#0070E0]" : "border-[#DCE3EC] bg-white text-[#64748B] hover:border-[#0C2340] hover:text-[#0C2340]"} disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {listening ? <Loader2 size={18} strokeWidth={1.75} className="animate-spin" aria-hidden="true" /> : <Mic size={18} strokeWidth={1.75} aria-hidden="true" />}
     </button>

@@ -3,20 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F6F7F9;
+  --bg: #F4F7FB;
   --surface: #FFFFFF;
-  --border: #E3E6EA;
-  --border-strong: #D4D9E0;
-  --ink: #17181C;
-  --muted: #5C6470;
-  --subtle: #8A93A0;
+  --border: #DCE3EC;
+  --border-strong: #C7D2DF;
+  --ink: #0C2340;
+  --body: #33415C;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --blue: #0070E0;
+  --blue-hover: #005FC2;
+  --blue-pressed: #00429A;
+  --blue-tint: #E8F1FC;
+  --blue-deep: #003087;
   --amber: #F59E0B;
-  --amber-hover: #D97706;
-  --amber-pressed: #B45309;
-  --amber-tint: #FFF7E8;
+  --amber-tint: #FFF4E0;
   --success: #067647;
+  --success-tint: #E7F6EE;
   --warning: #B45309;
+  --warning-tint: #FDF1E3;
   --danger: #B42318;
+  --danger-tint: #FDECEA;
 }
 
 @layer base {
@@ -29,7 +36,7 @@
   body {
     margin: 0;
     background: var(--bg);
-    color: var(--ink);
+    color: var(--body);
     font-size: 14px;
     line-height: 1.5;
     font-weight: 400;
@@ -37,11 +44,11 @@
   }
   button, input, select { font: inherit; }
   button { cursor: pointer; }
-  ::selection { background: rgba(245,158,11,.2); color: var(--ink); }
+  ::selection { background: rgba(0,112,224,.2); color: var(--ink); }
   h1, h2, h3 { font-weight: 700; color: var(--ink); }
   a { color: inherit; }
   :focus-visible {
-    outline: 2px solid rgba(245,158,11,.6);
+    outline: 2px solid rgba(0,112,224,.6);
     outline-offset: 2px;
   }
 }
@@ -52,18 +59,21 @@
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     padding-left: 1rem;
     padding-right: 1rem;
   }
   @media (min-width: 640px) {
     .xpay-container { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
+  @media (min-width: 1024px) {
+    .xpay-container { padding-left: 2rem; padding-right: 2rem; }
+  }
   .xpay-card {
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--surface);
-    box-shadow: 0 1px 2px rgba(16,24,40,.06);
+    box-shadow: 0 1px 2px rgba(12,35,64,.06);
   }
   .xpay-eyebrow {
     color: var(--muted);

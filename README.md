@@ -189,21 +189,40 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 ## Repository structure
 
 ```
-xpay/
-├── backend/                 # FastAPI app, corridor configs, ML, evals, tests
-│   ├── app/agent/           # LangGraph orchestrator (+ sequential fallback)
-│   ├── app/services/        # incentive, routing, compliance, risk, RAG, money, quotes, store, stellar
-│   ├── config/corridors/    # uae_bd.json (pricing as data)
-│   ├── data/                # eval sets, FX snapshot, OFAC sample, recipients
-│   ├── rag/corpus/          # BB / OFAC / ISO 20022 excerpts
-│   ├── ml/                  # train_gnn.py, ablation.py, model.pt, eval.json
-│   └── tests/               # test_core, test_smoke, test_step3, test_step4, financial, roi
-├── frontend/                # Next.js 14 (TS + Tailwind), Bangla toggle, voice, chain trail
-├── docs/                    # architecture, financial model, KPIs, validation, strategy
-├── .github/workflows/ci.yml # fresh-checkout CI
-├── docker-compose.yml
-├── Makefile
-└── REAL_VS_SIMULATED.md     # claim-by-claim truth table
+.
+├── AGENT.md                 # agent context & fintech guardrails
+├── README.md
+├── REAL_VS_SIMULATED.md     # claim-by-claim truth table (real vs simulated)
+├── Makefile                 # test / eval / docker targets
+├── docker-compose.yml       # backend + frontend services
+├── plan.md / TODO.md / SUMMARY.md
+├── .github/workflows/ci.yml # fresh-checkout CI (tests + docker build)
+├── assets/logo/xpay-logo.png
+├── backend/
+│   ├── app/main.py / app/config.py
+│   ├── app/agent/orchestrator.py  # LangGraph state machine (+ sequential fallback)
+│   ├── app/services/        # incentive, routing_scorer, compliance, gnn_risk, intent_parser, money, quotes, store, stellar, horizon, regulatory_rag, llm, explainer, roi, metrics
+│   ├── app/db/schema.sql
+│   ├── config/corridors/    # uae_bd.json / ksa_bd.json / my_bd.json (pricing as data)
+│   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json
+│   ├── rag/corpus/          # bb_* / iso20022_pacs008 / ofac_screening excerpts
+│   ├── ml/                  # train_gnn.py, ablation.py, model.pt, eval.json, ablation.md
+│   ├── evals/               # eval_scenarios.py, eval_sanctions.py, eval_rag.py
+│   ├── tests/               # test_core.py, test_financial.py, test_roi.py, test_smoke.py, test_step3.py, test_step4.py
+│   ├── requirements*.txt / Dockerfile / run_demo.py
+│   └── .venv/               # local venv (gitignored)
+├── frontend/
+│   ├── app/                 # page.tsx, layout.tsx, globals.css, roi/page.tsx
+│   ├── components/          # BrandMark, AgentPipeline, ChainTrail, MicButton, FlowDiagram
+│   ├── lib/                 # api.ts, i18n.ts, types.ts
+│   ├── public/assets/xpay-logo.png + public/favicon.ico
+│   ├── package.json / next.config.js / tailwind.config.ts / tsconfig.json
+│   └── .env.local.example
+├── docs/                    # architecture, api-contracts, FINANCIAL_MODEL, kpis, VALIDATION_REPORT, PRODUCT_STRATEGY, business-validation, SECURITY_AND_RESPONSIBLE_AI, responsible-ai, one-pager, demo-script, competition-analysis, stellar-sensitivity, unit-economics, etc.
+├── data/sources.md          # provenance for FX, routing, sanctions, RAG sources
+├── deploy/render.yaml
+├── reports/                 # load_test.txt, simulation_1000.json, review_volume.json
+└── scripts/                 # load_test_p95.py, simulate_1000.py, review_volume.py, stellar_sensitivity.py
 ```
 
 ## Team — CTRL V

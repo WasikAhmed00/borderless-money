@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield, Loader2, Settings, Check, ArrowRight, Info, Menu, X, Wallet, Building2, BadgeCheck, Mic } from "lucide-react";
+import { Shield, Loader2, Settings, Check, ArrowRight, Info, Menu, X, Wallet, Building2, BadgeCheck, Mic, LogOut, User } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
 import MicButton from "@/components/MicButton";
 import ChainTrail from "@/components/ChainTrail";
 import AgentPipeline from "@/components/AgentPipeline";
 import { executeTransfer, fmtBDT, fmtCurrency, getQuote } from "@/lib/api";
 import { STRINGS, applyDocLang, savedLang, type Lang } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import type { AgentStateResponse, DemoScenario } from "@/lib/types";
 
 type Screen = "send" | "quote" | "review" | "receipt";
@@ -38,6 +40,10 @@ function LangToggle({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
 }
 
 function TopBar({ lang, onLang, healthOk, onRetryHealth, scenario, onScenario, active = "send" }: { lang: Lang; onLang: (l: Lang) => void; healthOk: boolean | null; onRetryHealth: () => void; scenario: DemoScenario; onScenario: (s: DemoScenario) => void; active?: string; }) {
+  // Auth state for nav — useAuth inside TopBar requires AuthProvider wrapping (layout provides it)
+  const { isAuthenticated, role, email, logout } = useAuth();
+  const router = useRouter();
+  const handleLogout = () => { logout(); router.push("/login"); };
   const t = STRINGS[lang];
   const [gearOpen, setGearOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,11 +56,36 @@ function TopBar({ lang, onLang, healthOk, onRetryHealth, scenario, onScenario, a
           <nav className="hidden sm:flex items-center gap-6 text-sm">
             <a href="/" className={`pb-1 font-medium transition border-b-2 ${active === "send" ? "border-[#0070E0] text-[#0C2340]" : "border-transparent text-[#64748B] hover:text-[#0C2340]"}`}>{t.navSend}</a>
             <a href="/roi" className={`pb-1 font-medium transition border-b-2 ${active === "roi" ? "border-[#0070E0] text-[#0C2340]" : "border-transparent text-[#64748B] hover:text-[#0C2340]"}`}>{t.navRoi}</a>
+            {isAuthenticated && role === "admin" && (
+              <a href="/admin" className={`pb-1 font-medium transition border-b-2 ${active === "admin" ? "border-[#0070E0] text-[#0C2340]" : "border-transparent text-[#64748B] hover:text-[#0C2340]"}`}>Admin Panel</a>
+            )}
           </nav>
         </div>
         <div className="hidden sm:flex items-center gap-3">
           <LangToggle lang={lang} onLang={onLang} />
           <span title={healthLabel} className="h-2 w-2 rounded-full shrink-0" style={{ background: healthOk === false ? "#B42318" : healthOk ? "#067647" : "#DCE3EC" }} aria-label={healthLabel} />
+          {/* Auth controls — NEW: login/logout + role badge */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F4F7FB] px-2.5 py-1 text-xs font-medium text-[#0C2340]">
+                <User size={12} /> {email} <span className="text-[#64748B]">· {role}</span>
+              </span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE3EC] bg-white px-3 py-1.5 text-xs font-semibold text-[#0C2340] hover:bg-[#F4F7FB]"
+                title="Sign out"
+              >
+                <LogOut size={14} /> Logout
+              </button>
+            </div>
+          ) : (
+            <a
+              href="/login"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0070E0] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#005FC2]"
+            >
+              Login
+            </a>
+          )}
           <div className="relative">
             <button type="button" onClick={() => setGearOpen(!gearOpen)} aria-label={t.demoControls} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#DCE3EC] bg-white text-[#64748B] hover:text-[#0C2340] hover:border-[#C7D2DF]">
               <Settings size={18} strokeWidth={1.75} />
@@ -83,7 +114,18 @@ function TopBar({ lang, onLang, healthOk, onRetryHealth, scenario, onScenario, a
           <nav className="flex flex-col gap-2 text-sm">
             <a href="/" className={`font-medium ${active === "send" ? "text-[#0C2340] border-l-2 border-[#0070E0] pl-2" : "text-[#64748B]"}`}>{t.navSend}</a>
             <a href="/roi" className={`font-medium ${active === "roi" ? "text-[#0C2340] border-l-2 border-[#0070E0] pl-2" : "text-[#64748B]"}`}>{t.navRoi}</a>
+            {isAuthenticated && role === "admin" && (
+              <a href="/admin" className={`font-medium ${active === "admin" ? "text-[#0C2340] border-l-2 border-[#0070E0] pl-2" : "text-[#64748B]"}`}>Admin Panel</a>
+            )}
           </nav>
+          {isAuthenticated ? (
+            <div className="flex items-center justify-between rounded-lg border border-[#DCE3EC] bg-[#F4F7FB] px-3 py-2 text-xs">
+              <span className="font-medium text-[#0C2340]">{email} · {role}</span>
+              <button onClick={handleLogout} className="font-semibold text-[#B42318] hover:underline flex items-center gap-1"><LogOut size={12}/> Logout</button>
+            </div>
+          ) : (
+            <a href="/login" className="block text-center rounded-lg bg-[#0070E0] px-3 py-2 text-sm font-semibold text-white">Login</a>
+          )}
           <LangToggle lang={lang} onLang={onLang} />
           <div className="flex items-center gap-2 text-xs text-[#64748B]"><span className="h-2 w-2 rounded-full" style={{ background: healthOk === false ? "#B42318" : healthOk ? "#067647" : "#DCE3EC" }} />{healthLabel}</div>
           <button type="button" onClick={() => setGearOpen(!gearOpen)} className="flex items-center gap-2 text-sm font-medium text-[#0C2340]">{t.demoControls} <Settings size={16} strokeWidth={1.75} /></button>
@@ -154,6 +196,15 @@ function Footer({ lang }: { lang: Lang }) {
 }
 
 export default function Home() {
+  // Auth guard — NEW: redirect unauthenticated to /login, role-based UI
+  const { isAuthenticated, role, loading: authLoading } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   const [screen, setScreen] = useState<Screen>("send");
   const [lang, setLang] = useState<Lang>("en");
   const [amount, setAmount] = useState("1,000");
@@ -188,6 +239,18 @@ export default function Home() {
   if (screen === "review") return <ReviewScreen lang={lang} onLang={switchLang} healthOk={healthOk} onRetryHealth={checkHealth} onDone={reset} scenario={scenario} onScenario={setScenario} hasQuote={!!quote} hasResult={!!result} onNavigate={navigate} />;
   if (screen === "receipt" && result) return <ReceiptScreen result={result} lang={lang} onLang={switchLang} healthOk={healthOk} onRetryHealth={checkHealth} arrivalHours={quote?.routes.find(r => r.name === result.transaction?.route_selected)?.settlement_time_hrs} onRestart={reset} scenario={scenario} onScenario={setScenario} hasQuote={!!quote} hasResult={!!result} onNavigate={navigate} />;
 
+  // Show loading while auth hydrates or redirect is pending
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]">
+        <Loader2 className="animate-spin text-[#0070E0]" size={32} />
+      </div>
+    );
+  }
+  if (!isAuthenticated) {
+    return null; // redirecting to /login
+  }
+
   return (
     <div className="xpay-shell min-h-screen flex flex-col">
       <TopBar lang={lang} onLang={switchLang} healthOk={healthOk} onRetryHealth={checkHealth} scenario={scenario} onScenario={setScenario} active="send" />
@@ -220,8 +283,22 @@ export default function Home() {
             <p className="mt-8 text-xs text-[#94A3B8]">{t.landingFootnote}</p>
           </div>
           <div className="order-1 lg:order-2">
-            <div className="bg-white border border-[#DCE3EC] rounded-xl p-8">
-              <div className="mb-4"><Stepper current="send" lang={lang} onNavigate={navigate} hasQuote={!!quote} hasResult={!!result} /></div>
+            {role === "guest" ? (
+              /* Guest read-only banner — NEW: hides form per spec */
+              <div className="bg-white border border-[#DCE3EC] rounded-xl p-8">
+                <div className="mb-4"><Stepper current="send" lang={lang} onNavigate={navigate} hasQuote={!!quote} hasResult={!!result} /></div>
+                <div className="rounded-lg border border-[#B45309]/20 bg-[#FDF1E3] px-4 py-6 text-center">
+                  <Shield className="mx-auto text-[#B45309] mb-3" size={28} />
+                  <p className="text-sm font-semibold text-[#0C2340]">Read-only access</p>
+                  <p className="text-sm text-[#64748B] mt-2">Login as a User to initiate transfers.</p>
+                  <a href="/login" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0070E0] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#005FC2]">Go to Login</a>
+                  <p className="text-xs text-[#94A3B8] mt-3">You can still view rates as guest, but execution requires user privileges.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white border border-[#DCE3EC] rounded-xl p-8">
+                  <div className="mb-4"><Stepper current="send" lang={lang} onNavigate={navigate} hasQuote={!!quote} hasResult={!!result} /></div>
               <form onSubmit={(e) => { e.preventDefault(); if (Number.isFinite(amountValue) && amountValue > 0 && !busy) getBestRate(); }} className="space-y-6">
                 <div>
                   <label htmlFor="amount" className="mb-2 block text-sm font-medium text-[#0C2340]">{t.youSendLabel}</label>
@@ -273,10 +350,12 @@ export default function Home() {
                 <button type="submit" disabled={!Number.isFinite(amountValue) || amountValue <= 0 || busy} className="hidden sm:flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0070E0] text-sm font-semibold text-white hover:bg-[#005FC2] active:bg-[#00429A] disabled:opacity-40">{busy ? <span className="flex items-center gap-2"><Loader2 size={16} strokeWidth={1.75} className="animate-spin" />{waking ? t.wakingUp : t.evaluating}</span> : <><span>{t.bestRateBtn}</span><ArrowRight size={16} strokeWidth={1.75} /></>}</button>
                 <p className="flex items-start gap-2 text-[13px] leading-relaxed text-[#64748B]"><Info size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-[#64748B]" />{t.trustStrip}</p>
               </form>
-            </div>
-            <div className="sm:hidden sticky bottom-0 mt-4 border-t border-[#DCE3EC] bg-white p-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-              <button type="button" disabled={!Number.isFinite(amountValue) || amountValue <= 0 || busy} onClick={() => getBestRate()} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0070E0] text-sm font-semibold text-white disabled:opacity-40">{busy && <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />}{busy ? (waking ? t.wakingUp : t.evaluating) : t.bestRateBtn}</button>
-            </div>
+              </div>
+              <div className="sm:hidden sticky bottom-0 mt-4 border-t border-[#DCE3EC] bg-white p-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+                <button type="button" disabled={!Number.isFinite(amountValue) || amountValue <= 0 || busy} onClick={() => getBestRate()} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0070E0] text-sm font-semibold text-white disabled:opacity-40">{busy && <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />}{busy ? (waking ? t.wakingUp : t.evaluating) : t.bestRateBtn}</button>
+              </div>
+              </>
+            )}
           </div>
         </div>
       </main>

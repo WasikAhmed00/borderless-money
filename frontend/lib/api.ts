@@ -2,6 +2,14 @@ import type { AgentStateResponse, DemoScenario } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
 
+// Helper to get auth headers from localStorage (client-side only)
+function authHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("xpay_token");
+  if (token) return { Authorization: `Bearer ${token}` };
+  return {};
+}
+
 async function post<T>(path: string, body: unknown, onSlow?: () => void): Promise<T> {
   // Free-tier cold starts can take well over 5s; onSlow lets the UI show a
   // "waking up" state while the request is still in flight.
@@ -11,7 +19,7 @@ async function post<T>(path: string, body: unknown, onSlow?: () => void): Promis
   try {
     res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
     });
   } catch {
@@ -67,7 +75,9 @@ export function executeTransfer(params: ExecuteParams, onSlow?: () => void): Pro
 
 /** Fetch a persisted quote with its live expiry status. */
 export function getQuoteById(quoteId: string): Promise<Record<string, unknown>> {
-  return fetch(`${API_BASE}/api/quotes/${encodeURIComponent(quoteId)}`).then(res => {
+  return fetch(`${API_BASE}/api/quotes/${encodeURIComponent(quoteId)}`, {
+    headers: { ...authHeaders() },
+  }).then(res => {
     if (!res.ok) throw new Error(res.statusText);
     return res.json() as Promise<Record<string, unknown>>;
   });

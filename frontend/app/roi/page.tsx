@@ -2,6 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import { STRINGS, applyDocLang, savedLang } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { LogOut, User, Loader2 } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 type ScenarioKey = "conservative" | "base" | "optimistic";
 interface Inputs { monthlyTransfers: number; avgPrincipal: number; baselinePct: number; proposedPct: number; eligibilityShare: number; adoptionRate: number; apiPricePerTx: number; apiMonthlyFee: number; bearingShare: number; customerMonthlyCosts: number; vendorVariableCostPerTx: number | null; }
@@ -12,9 +15,21 @@ function compute(i:Inputs,key:ScenarioKey){ const {adoptMult,eligMult}=SCENARIOS
 const fmt=(x:number|null,cur="AED")=> x==null?"—":`${cur?cur+" ":""}${x.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 function Field(props:{label:string;hint:string;value:number;onChange:(v:number)=>void;step?:number;min?:number;max?:number;suffix?:string}){return (<label className="block"><div className="flex items-center justify-between mb-1"><span className="text-xs font-medium text-[#0C2340]">{props.label}</span><span className="text-xs text-[#94A3B8] font-mono">{props.hint}</span></div><div className="relative flex items-center"><input type="number" className="w-full rounded-lg border border-[#DCE3EC] bg-white px-3 py-2 pr-12 text-sm text-[#0C2340] focus:border-[#0070E0] focus:ring-2 focus:ring-[#0070E0]/20 outline-none" value={props.value} step={props.step??1} min={props.min??0} max={props.max} onChange={(e)=>props.onChange(Number(e.target.value))} />{props.suffix && <span className="absolute right-3 text-xs text-[#94A3B8] font-mono pointer-events-none">{props.suffix}</span>}</div></label>);}
 function LangToggle({lang,onLang}:{lang:Lang;onLang:(l:Lang)=>void}){return (<div className="flex rounded-lg border border-[#DCE3EC] bg-[#F4F7FB] p-1 text-xs font-semibold"><button type="button" onClick={()=>onLang("en")} className={`rounded-md px-2.5 py-1 ${lang==="en"?"bg-white border border-[#DCE3EC] text-[#0C2340] shadow-sm":"text-[#64748B] hover:text-[#0C2340]"}`}>EN</button><button type="button" onClick={()=>onLang("bn")} className={`rounded-md px-2.5 py-1 ${lang==="bn"?"bg-white border border-[#DCE3EC] text-[#0C2340] shadow-sm":"text-[#64748B] hover:text-[#0C2340]"}`}>বাং</button></div>);}
-function RoiTopBar({lang,onLang}:{lang:Lang;onLang:(l:Lang)=>void}){const t=STRINGS[lang]; return (<header className="sticky top-0 z-30 border-b border-[#DCE3EC] bg-white" style={{height:64}}><div className="xpay-container flex h-full items-center justify-between gap-4"><div className="flex items-center gap-6"><a href="/" className="flex items-center"><BrandMark /></a><nav className="hidden sm:flex items-center gap-6 text-sm"><a href="/" className="pb-1 font-medium border-b-2 border-transparent text-[#64748B] hover:text-[#0C2340]">{t.navSend}</a><a href="/roi" className="pb-1 font-medium border-b-2 border-[#0070E0] text-[#0C2340]">{t.navRoi}</a></nav></div><div className="flex items-center gap-3"><LangToggle lang={lang} onLang={onLang} /></div></div></header>);}
+function RoiTopBar({lang,onLang}:{lang:Lang;onLang:(l:Lang)=>void}){
+  const t=STRINGS[lang];
+  const { isAuthenticated, role, email, logout } = useAuth();
+  const router = useRouter();
+  const handleLogout = () => { logout(); router.push("/login"); };
+  return (<header className="sticky top-0 z-30 border-b border-[#DCE3EC] bg-white" style={{height:64}}><div className="xpay-container flex h-full items-center justify-between gap-4"><div className="flex items-center gap-6"><a href="/" className="flex items-center"><BrandMark /></a><nav className="hidden sm:flex items-center gap-6 text-sm"><a href="/" className="pb-1 font-medium border-b-2 border-transparent text-[#64748B] hover:text-[#0C2340]">{t.navSend}</a><a href="/roi" className="pb-1 font-medium border-b-2 border-[#0070E0] text-[#0C2340]">{t.navRoi}</a>{isAuthenticated && role==="admin" && <a href="/admin" className="pb-1 font-medium border-b-2 border-transparent text-[#64748B] hover:text-[#0C2340]">Admin Panel</a>}</nav></div><div className="flex items-center gap-3"><LangToggle lang={lang} onLang={onLang} />{isAuthenticated ? <div className="hidden sm:flex items-center gap-2"><span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#DCE3EC] bg-[#F4F7FB] px-2.5 py-1 text-xs font-medium text-[#0C2340]"><User size={12}/> {email} · {role}</span><button onClick={handleLogout} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE3EC] bg-white px-3 py-1.5 text-xs font-semibold text-[#0C2340] hover:bg-[#F4F7FB]"><LogOut size={14}/> Logout</button></div> : <a href="/login" className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-[#0070E0] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#005FC2]">Login</a>}</div></div></header>); }
 export default function RoiPage(){
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
+  useEffect(()=>{ if(!authLoading && !isAuthenticated) router.push("/login"); },[authLoading, isAuthenticated, router]);
   const [lang,setLang]=useState<Lang>("en"); const [i,setI]=useState<Inputs>(DEFAULTS); const [active,setActive]=useState<ScenarioKey>("base"); const r=useMemo(()=>compute(i,active),[i,active]); const set=(k:keyof Inputs)=>(v:number)=>setI(p=>({...p,[k]:v})); const t=STRINGS[lang]; useEffect(()=>{const l=savedLang(); setLang(l); applyDocLang(l);},[]); const switchLang=(l:Lang)=>{setLang(l); window.localStorage.setItem("xpay-lang",l); applyDocLang(l);}; const breakevenNoteText= r.breakevenNote==="none"?t.roi.breakevenNone : r.breakevenNote==="negative"?t.roi.breakevenNegative : t.roi.breakevenPayoff;
+  if (authLoading) {
+    return (<div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]"><Loader2 className="animate-spin text-[#0070E0]" size={32} /></div>);
+  }
+  if (!isAuthenticated) return null;
   return (
     <div className="xpay-shell min-h-screen flex flex-col">
       <RoiTopBar lang={lang} onLang={switchLang} />

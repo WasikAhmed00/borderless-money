@@ -15,3 +15,9 @@ torch_geometric>=2.5
 
 # Optional embeddings for the regulatory RAG (lexical fallback otherwise)
 sentence-transformers>=2.7
+
+# Auth & RBAC
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+python-multipart>=0.0.9
+bcrypt==4.0.1

@@ -1,0 +1,17 @@
+[
+  {
+    "email": "admin@xpay.com",
+    "hashed_password": "$2b$12$Q.EMPq/e5944l357zbGFQObS5pqgAE25GMJAJuY0hA6j5EtmlLBsK",
+    "role": "admin"
+  },
+  {
+    "email": "user@xpay.com",
+    "hashed_password": "$2b$12$k6G0WIra62Q1a44IqbnpGO5OyNmTWBAjU2Gx67iEbBG4OTprMBKeK",
+    "role": "user"
+  },
+  {
+    "email": "guest@xpay.com",
+    "hashed_password": "$2b$12$5avUWlGzo3atXnNm0HCX6Ou.5fFfwufUyA1OemwcarIe6gtlPTNEK",
+    "role": "guest"
+  }
+]

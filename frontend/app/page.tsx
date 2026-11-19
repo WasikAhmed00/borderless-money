@@ -43,8 +43,8 @@ function TopBar({ lang, onLang, healthOk, onRetryHealth, scenario, onScenario, a
   const [menuOpen, setMenuOpen] = useState(false);
   const healthLabel = healthOk === false ? t.healthAsleep : t.healthReady;
   return (
-    <header className="sticky top-0 z-30 border-b border-[#DCE3EC] bg-white" style={{ height: 64 }}>
-      <div className="xpay-container flex h-full items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 bg-white border-b border-[#DCE3EC]">
+      <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <a href="/" className="flex items-center"><BrandMark /></a>
           <nav className="hidden sm:flex items-center gap-6 text-sm">
@@ -192,12 +192,26 @@ export default function Home() {
     <div className="xpay-shell min-h-screen flex flex-col">
       <TopBar lang={lang} onLang={switchLang} healthOk={healthOk} onRetryHealth={checkHealth} scenario={scenario} onScenario={setScenario} active="send" />
       <main className="flex-1 xpay-container flex min-h-[calc(100vh-64px)] items-center py-8">
-        <div className="grid w-full gap-12 lg:grid-cols-[1.05fr_0.95fr] items-start">
+        <div className="grid w-full gap-16 lg:grid-cols-[1.1fr_0.9fr] items-start">
           <div className="order-2 lg:order-1 pt-2">
-            <p className="text-sm text-[#64748B]">{t.sendMoneyTitle}</p>
-            <h1 className="mt-2 text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#0C2340]">{t.sendMoneySubtitle}</h1>
-            <p className="mt-3 text-[15px] leading-relaxed text-[#33415C]">{t.landingIntroBody}</p>
-            <div className="mt-8 space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <img
+                src="/assets/xpay-logo.png"
+                alt="xPay"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-lg object-contain"
+              />
+              <span className="text-2xl font-bold text-[#0C2340]">xPay</span>
+            </div>
+            <p className="text-sm text-[#64748B] mb-4">{t.sendMoneyTitle}</p>
+            <h1 className="text-[44px] leading-[1.15] font-bold text-[#0C2340] mb-6">
+              {t.sendMoneySubtitle}
+            </h1>
+            <p className="text-[15px] leading-relaxed text-[#33415C] mb-10 max-w-[480px]">
+              {t.landingIntroBody}
+            </p>
+            <div className="space-y-6">
               <FeatureRow icon={Wallet} title={t.featureTrueNetTitle} desc={t.featureTrueNetDesc} />
               <FeatureRow icon={Building2} title={t.featureRailsTitle} desc={t.featureRailsDesc} />
               <FeatureRow icon={BadgeCheck} title={t.featureScreeningTitle} desc={t.featureScreeningDesc} />
@@ -206,7 +220,7 @@ export default function Home() {
             <p className="mt-8 text-xs text-[#94A3B8]">{t.landingFootnote}</p>
           </div>
           <div className="order-1 lg:order-2">
-            <div className="xpay-card p-6 sm:p-7">
+            <div className="bg-white border border-[#DCE3EC] rounded-xl p-8">
               <div className="mb-4"><Stepper current="send" lang={lang} onNavigate={navigate} hasQuote={!!quote} hasResult={!!result} /></div>
               <form onSubmit={(e) => { e.preventDefault(); if (Number.isFinite(amountValue) && amountValue > 0 && !busy) getBestRate(); }} className="space-y-6">
                 <div>

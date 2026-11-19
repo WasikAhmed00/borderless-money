@@ -19,7 +19,7 @@ venv/
 # Node / Next.js
 node_modules/
 .next/
-.next_old_root/
+.next_*/
 out/
 npm-debug.log*
 yarn-error.log*

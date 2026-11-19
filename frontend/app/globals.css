@@ -3,16 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --bg: #FAFAF8;
+  --bg: #F6F7F9;
   --surface: #FFFFFF;
-  --border: #E7E5E0;
-  --muted: #6B6B66;
-  --ink: #1A1A18;
-  --accent: #D97706;
-  --accent-fg: #FFFFFF;
-  --success: #047857;
+  --border: #E3E6EA;
+  --border-strong: #D4D9E0;
+  --ink: #17181C;
+  --muted: #5C6470;
+  --subtle: #8A93A0;
+  --amber: #F59E0B;
+  --amber-hover: #D97706;
+  --amber-pressed: #B45309;
+  --amber-tint: #FFF7E8;
+  --success: #067647;
   --warning: #B45309;
-  --danger: #B91C1C;
+  --danger: #B42318;
 }
 
 @layer base {
@@ -26,44 +30,53 @@
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.5;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
   }
   button, input, select { font: inherit; }
   button { cursor: pointer; }
-  ::selection { background: rgba(217, 119, 6, .2); color: var(--ink); }
-  /* Headings 700 only, UI labels 600, body 400 per anti-slop */
+  ::selection { background: rgba(245,158,11,.2); color: var(--ink); }
   h1, h2, h3 { font-weight: 700; color: var(--ink); }
   a { color: inherit; }
+  :focus-visible {
+    outline: 2px solid rgba(245,158,11,.6);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-  .xpay-shell {
-    min-height: 100vh;
-    background: var(--bg);
+  .xpay-shell { min-height: 100vh; background: var(--bg); }
+  .xpay-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 1080px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 640px) {
+    .xpay-container { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
   .xpay-card {
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 12px;
     background: var(--surface);
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    box-shadow: 0 1px 2px rgba(16,24,40,.06);
   }
   .xpay-eyebrow {
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: .14em;
+    letter-spacing: .12em;
     text-transform: uppercase;
   }
   .xpay-mono {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
-  .xpay-fade-up {
-    animation: fade-up 150ms ease both;
-  }
+  .xpay-fade-up { animation: fade-up 150ms ease both; }
 }
 
 @keyframes fade-up {

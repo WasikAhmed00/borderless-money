@@ -288,6 +288,15 @@ const en = {
   arrival3h: "3 hours",
   arrival12h: "12 hours",
   arrival24h: "24 hours",
+  spreadCost: (amount: string) => `Spread cost −${amount}`,
+  incentiveGain: (amount: string) => `Incentive gain +${amount}`,
+  netVsMidMarket: "Net vs mid-market",
+  simulatedQuotesDisclosure: "Simulated quotes — not live market data",
+  downloadJson: "Download JSON",
+  trackStatusNext: "Track status or send another",
+  stepOf: (step: number, total: number, label: string) => `Step ${step} of ${total} · ${label}`,
+  engineStatusLabel: "Engine status",
+  demoScenarioShort: "Demo scenario",
   pipeline: {
     title: "Autonomous remittance agent pipeline",
     evaluating: "Evaluating…",
@@ -623,6 +632,15 @@ const bn: typeof en = {
   arrival3h: "৩ ঘণ্টা",
   arrival12h: "১২ ঘণ্টা",
   arrival24h: "২৪ ঘণ্টা",
+  spreadCost: (amount: string) => `স্প্রেড খরচ −${amount}`,
+  incentiveGain: (amount: string) => `প্রণোদনা লাভ +${amount}`,
+  netVsMidMarket: "মিড-মার্কেটের তুলনায় নিট",
+  simulatedQuotesDisclosure: "সিমুলেটেড কোট — লাইভ বাজার ডেটা নয়",
+  downloadJson: "JSON ডাউনলোড",
+  trackStatusNext: "স্ট্যাটাস ট্র্যাক করুন বা আরেকটি পাঠান",
+  stepOf: (step: number, total: number, label: string) => `ধাপ ${step} / ${total} · ${label}`,
+  engineStatusLabel: "ইঞ্জিন স্ট্যাটাস",
+  demoScenarioShort: "ডেমো সিনারিও",
 };
 
 export const STRINGS: Record<Lang, typeof en> = { en, bn };

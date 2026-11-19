@@ -1,24 +1,8 @@
-# xPay deployment config (Render blueprint).
-#
-# STATUS (2026-10-28): BLOCKED — no deploy credentials available in this
-# environment, so no live Render blueprint deploy was performed. The blueprint
-# below is complete and ready for a human to deploy in ~10 minutes by
-# following the VERIFY steps. The demo runs fully locally: backend on :8000,
-# frontend on :3000 (verified — see docs/manual-qa.md).
-#
-# VERIFY (human step — this repo cannot hold credentials):
-#   1. Rename the GitHub repo to `xpay` (Settings -> General), then point the
-#      remote: git remote set-url origin git@github.com:taskifbin/xpay.git
-#   2. In Render: New -> Blueprint, select this repo — it reads this file.
-#   3. After the API deploys, copy its real URL into the frontend
-#      NEXT_PUBLIC_API_BASE below (Render injects service hostnames; the
-#      placeholder here must be replaced before the frontend build).
-#   4. Vercel (frontend) is an alternative: root=frontend, env
-#      NEXT_PUBLIC_API_BASE=<render-api-url>.
-# Nothing in this file is a secret; the demo needs no API keys (LLM off).
+# Render Blueprint for borderless-money.
+# The canonical copy is also available at the repository root as render.yaml.
 services:
   - type: web
-    name: xpay-api
+    name: borderless-money-api
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -26,17 +10,17 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: XPAY_CORS_ORIGINS
-        value: https://xpay-frontend.onrender.com,http://localhost:3000
+        value: https://borderless-money-web.onrender.com,http://localhost:3000
       - key: XPAY_RATE_LIMIT
         value: 240/minute
 
   - type: web
-    name: xpay-frontend
+    name: borderless-money-web
     env: node
     rootDir: frontend
-    buildCommand: npm install --no-audit --no-fund && npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm run start
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_BASE
-        value: https://xpay-api.onrender.com   # VERIFY: replace with the real xpay-api URL after first deploy
+        value: https://borderless-money-api.onrender.com

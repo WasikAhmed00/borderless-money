@@ -30,7 +30,7 @@ the whole design idea: **agency on top, determinism underneath.**
 │  🛡️ gnn_risk.py         PyTorch Geometric GCN + stand-in infer   │
 │  ⚖️ compliance.py        OFAC fuzzy matching, ISO 20022 mapping  │
 │  💱 incentive.py        True Net Receive + 2.5% BD incentive     │
-│  ⛓️ stellar.py          Testnet path payment (or simulated)      │
+│  ⛓️ stellar.py          Simulated settlement (clearly labeled)   │
 └─────────────────────────────────────────────────────────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -114,7 +114,7 @@ ineligible, refused at settlement. Full contract: docs/FINANCIAL_MODEL.md.
 
 ### Execution (`services/stellar.py`)
 Simulated by design (an earlier testnet "attempt" could never work and was
-removed — see REAL_VS_SIMULATED.md). Returns a clearly-labeled `SIMULATED`
+removed — see [REAL_VS_SIMULATED.md](../REAL_VS_SIMULATED.md)). Returns a clearly-labeled `SIMULATED`
 result; the demo harness may inject `outcome=TIMEOUT|FAILED` to exercise the
 uncertain-settlement path, which is NEVER reported as success: the transaction
 becomes `RECONCILIATION_REQUIRED` with no hash. `network` is always explicit.
@@ -129,7 +129,7 @@ Voice "Send 1,000 dirhams to my mother's bKash in Dhaka"
   → POST /api/agent/execute
        ├─ GNN risk 0.07 (LOW)           → pass
        ├─ OFAC CLEAR (both parties)     → pass  ── gate opens
-       ├─ Stellar testnet path payment  → hash
+       ├─ Simulated settlement → hash (network: SIMULATED)
        ├─ ISO 20022 payload + receipt   → store
        └─ explanation log               → UI
 ```
@@ -142,13 +142,13 @@ Voice "Send 1,000 dirhams to my mother's bKash in Dhaka"
 | Routing/fee comparison engine | ✅ | rate & fee snapshots |
 | OFAC fuzzy matcher | ✅ | sample list |
 | GNN model architecture | ✅ (PyG, in repo) | stand-in inference |
-| Stellar settlement | ✅ testnet path | fallback simulated hash |
+| Stellar settlement | — | Simulated by design (`network: SIMULATED`) |
 | bKash/Nagad payout | — | mock registry |
 
 PostgreSQL is the production store (`db/schema.sql`); the demo store is in-memory with
 optional SQLite persistence via `XPAY_DB_PATH` — zero setup for judges.
 
-## Quote Lifecycle & Failure Paths (added Oct 25)
+## Quote Lifecycle & Failure Paths
 
 Every quote is a persisted artifact (`services/quotes.py`): `quote_id`,
 `created_at`, `expires_at` (TTL from corridor `quote_ttl_minutes`, default 60
@@ -167,7 +167,7 @@ on every response, per-IP rate limiting on `/api/*` (ops probes exempt),
 optional `X-API-Key` enforcement via `XPAY_API_KEY`.
 
 Failure paths, all exercised in `backend/evals/eval_scenarios.py`
-(docs/evaluation_report.json):
+(evaluation_report.json):
 
 | Failure | Behavior |
 | :--- | :--- |

@@ -2,7 +2,7 @@
 
 If the pitch touches the "graph neural network" risk component, this is the
 slide. It says what the ablation actually shows (full table:
-[docs/kpis.md](../kpis.md), produced by `make ablation` — never hand-edited).
+[kpis.md](../kpis.md), produced by `make ablation` — never hand-edited).
 
 **Slide title:** *Graph-ready risk model — we show the baseline, not a
 mystique*

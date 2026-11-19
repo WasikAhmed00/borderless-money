@@ -57,10 +57,7 @@ engineering to build this themselves.
 | E. Revenue share on flow | Big upside | Legally loaded: sharing in money-transfer economics can trigger licensing questions we cannot answer as a non-MSB | Rejected for now |
 
 **Primary: B — usage-based, per successful route recommendation executed.**
-Anchor (assumption, sized from the unit-economics doc): **AED 1.00 per executed
-transfer** (vs incumbent all-in fees of AED 15–25 per transfer — incumbents
-leave far more than AED 1 of value per transfer on the table, so the price is
-an order of magnitude under the value while staying software-margin).
+Anchor (assumption, sized from [unit-economics.md](unit-economics.md)): senders pay a **flat AED 2.00** per transfer and exchange-house partners pay a **0.15% take rate on principal** for the routing and compliance API (variable cost ≈ AED 0.16/transfer; see unit-economics for margin and CAC). This aligns with incumbent all-in fees of AED 15–25 per transfer — incumbents leave far more than the API price of value per transfer on the table, so the price is an order of magnitude under the value while staying software-margin.
 **Fallback: A — monthly SaaS** at AED 1,500–5,000/month tiered by volume for
 customers whose procurement hates metering.
 

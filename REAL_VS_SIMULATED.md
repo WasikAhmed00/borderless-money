@@ -2,15 +2,14 @@
 
 This file is the contract between the README and the code. Every surface is
 either **REAL** (works as described, reproducible) or **SIMULATED** (labeled in
-the UI and API). Last reconciled: 2026-10-24, after Steps 0–8 of the code-review
-sprint. If a claim is not in this table, it does not exist.
+the UI and API). Last reconciled: 2026-10-28. If a claim is not in this table, it does not exist.
 
 | Surface | State | Evidence / how to verify |
 | :--- | :--- | :--- |
 | True Net Receive math (incl. 2.5% BD incentive + AED 2 platform fee) | **REAL** | `make test` — exact numbers asserted (33,423.20 / 820.00 on AED 1,000, platform fee itemized) |
 | Corridor configs (rules as data) | **REAL** | `backend/config/corridors/{uae_bd,ksa_bd}.json`; e2e test runs KSA corridor (`tests/test_step4.py`) |
 | Incentive eligibility as routing logic | **REAL** | teaser-rate rail is incentive-ineligible and loses the top spot (`tests/test_step4.py::test_incentive_flag_flips_the_winner`) |
-| Expected-value ranking + naive baseline | **REAL** | `GET /api/routes/compare` returns `baseline` + per-route `expected_value_bdt` |
+| Reliability-adjusted ranking + naive baseline | **REAL** | `GET /api/routes/compare` returns `baseline` + per-route `reliability_adjusted_net` (`true_net × success_rate`) |
 | Sanctions matcher (normalized Jaro + coverage) | **REAL** | `make eval-sanctions` — 11/11 true hits BLOCKED, alias-only + near-misses REVIEW, 0/21 clear flagged, 0 single-token blocks |
 | Sanctions list | **SIMULATED** | 10-entry local sample (`data/ofac_sample.json`), not the official SDN export |
 | Risk model (default scorer) | **REAL code, honest label** | `heuristic-stand-in` — a deterministic tabular rule; `engine` field says so; explanations generated from the decision log (`make ablation` for the rule/LR/stumps/GCN comparison) |

@@ -50,7 +50,7 @@ Four layers, thirty seconds:
 
 ## 2:30–3:00 · Impact numbers + next step
 
-> "Measured today: **+3.05% more money arrives** after our own AED 2 fee is counted, sub-3-second quotes, zero false holds, full screening recall. Next: a pilot with one UAE exchange partner, three corridors — UAE, KSA, Malaysia to Bangladesh — and a **Remittance-as-a-Service API** for bKash and Nagad partners, at a 0.2–0.5% take rate. Ten thousand senders in six months. FinSphere AI track — **xPay. Built in Dhaka, for the world.**"
+> "Measured today: **+3.05% more money arrives** after our own AED 2 fee is counted, 21.2 ms p95 end-to-end quotes, zero false holds, full screening recall on our 58-case benchmark. Next: a pilot with one UAE exchange partner, additional corridors (KSA config already shipped as proof of the pattern) and a **Remittance-as-a-Service API** for bKash and Nagad partners, at a 0.15% take rate on principal plus AED 2 sender fee. Pilot assumptions are sized in docs/unit-economics.md. FinSphere AI track — **xPay. Built in Dhaka, for the world.**"
 
 *(Screen: `/metrics` JSON or the KPI table. End on it.)*
 

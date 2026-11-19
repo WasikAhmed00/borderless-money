@@ -3,7 +3,7 @@
 One slide. Every number below is computed in this repo — the footnote column is
 the source of truth, and `# SOURCE NEEDED` marks the only externally claimed
 figure. Do not put any number on a slide that is not a row here or in
-[docs/kpis.md](kpis.md) / [docs/unit-economics.md](unit-economics.md).
+[kpis.md](kpis.md) / [unit-economics.md](unit-economics.md).
 
 ## The slide
 
@@ -18,14 +18,14 @@ alone leaves most of that on the table.
 
 | Line | Value | Source of truth |
 | :--- | ---: | :--- |
-| Net-receive uplift vs legacy SWIFT (headline) | **+3.05%** | corridor math, `GET /metrics` · [docs/kpis.md](kpis.md) |
-| Pessimistic anchor-pricing case | **+2.59%** (table range +2.59–3.63%) | [docs/stellar-sensitivity.md](stellar-sensitivity.md) |
+| Net-receive uplift vs legacy SWIFT (headline) | **+3.05%** | corridor math, `GET /metrics` · [kpis.md](kpis.md) |
+| Pessimistic anchor-pricing case | **+2.59%** (table range +2.59–3.63%) | [stellar-sensitivity.md](stellar-sensitivity.md) |
 | 1,000-transfer simulation | **+3.53% mean** (1.57–11.08%) | `reports/simulation_1000.json` — fee-only ranking picks the ineligible promo rail on every transfer (100% disagreement with EV ranking); that gap is the incentive value |
-| xPay consumer fee | **AED 2.00 flat**, shown as a line item | product decision · [docs/unit-economics.md](unit-economics.md) |
-| B2B (Remittance-as-a-Service) price | **0.15% take rate on principal** | product decision · [docs/unit-economics.md](unit-economics.md) |
-| Cost per transfer | **AED 0.16** (infra 0.06 · FX 0.03 · screening 0.02 · settlement/audit 0.05) | [docs/unit-economics.md](unit-economics.md) |
-| Gross margin (consumer fee) | **AED 3.34 / 95.4%** | [docs/unit-economics.md](unit-economics.md) |
-| Sanctions screening | **100% recall, 0% false-hold** on the 58-case benchmark | `make eval-sanctions` · [docs/kpis.md](kpis.md) |
+| xPay consumer fee | **AED 2.00 flat**, shown as a line item | product decision · [unit-economics.md](unit-economics.md) |
+| B2B (Remittance-as-a-Service) price | **0.15% take rate on principal** | product decision · [unit-economics.md](unit-economics.md) |
+| Cost per transfer | **AED 0.16** (infra 0.06 · FX 0.03 · screening 0.02 · settlement/audit 0.05) | [unit-economics.md](unit-economics.md) |
+| Gross margin (consumer fee) | **AED 3.34 / 95.4%** | [unit-economics.md](unit-economics.md) |
+| Sanctions screening | **100% recall, 0% false-hold** on the 58-case benchmark | `make eval-sanctions` · [kpis.md](kpis.md) |
 | Review workload | **0 / 1,000 transfers** on the local list; **40 / 1,000** vs the real 19,484-entry OFAC SDN file | `reports/review_volume.json`; real-list run 2026-10-28 — `data/sources.md` |
 | Quote latency | **21.2 ms p95 end-to-end HTTP** | `reports/load_test.txt` |
 | Market size | **$35.56B** FY2025-26 remittances to BD; **$4.58B** UAE corridor | `# SOURCE NEEDED: Bangladesh Bank release URL + date` — see [data/sources.md](../data/sources.md) before quoting on camera |
@@ -33,7 +33,7 @@ alone leaves most of that on the table.
 **Honesty line (keep on the slide):** quotes are simulated corridor fixtures;
 sanctions/intent benchmarks are curated, not production statistics; **no user
 validation has been run yet** (instrument ready —
-[docs/validation/survey.md](validation/survey.md)).
+[validation/survey.md](validation/survey.md)).
 
 **What we ask for:** pilot with one UAE exchange-house partner (LOI), three
 corridors (UAE/KSA→BD live today as configs), and the RaaS API in front of

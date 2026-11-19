@@ -6,9 +6,9 @@ honest sentence instead of improvising.
 
 1. **Is your headline model just a rebrand of a simpler one?**
    No — and we ship the ablation that proves we asked the question ourselves:
-   `ml/ablation.md` shows a simple linear rule MATCHES the trained GCN on this
+   `../backend/ml/ablation.md` shows a simple linear rule MATCHES the trained GCN on this
    data (same split), so the explainable rule is the shipped default and the
-   GCN is opt-in with a published class-error analysis (`ml/eval.json`). The
+   GCN is opt-in with a published class-error analysis (`../backend/ml/eval.json`). The
    differentiator is not the model anyway — it is computing the 2.5% incentive
    into the route choice (`backend/app/services/incentive.py`,
    `docs/FINANCIAL_MODEL.md`).
@@ -50,8 +50,7 @@ honest sentence instead of improvising.
    never auto-blocked on an alias — alias-only matches are held for review
    because we collect no second identifier. The user sees the rationale in
    plain language, a human releases or rejects within the stated 24-hour SLA,
-   and the operational load is measured at 8 reviews per 1,000 transfers
-   (`reports/review_volume.json`).
+   and the operational load is measured at **0 reviews per 1,000 transfers on the 10-entry local list (40 per 1,000 vs the real 19,484-entry SDN sample)** (`reports/review_volume.json`, `data/sources.md`).
 
 7. **What did real users say?**
    **TODO: depends on survey** — the instrument is drafted in
@@ -63,7 +62,6 @@ honest sentence instead of improvising.
 8. **What is real and what is simulated?**
    Read from `REAL_VS_SIMULATED.md` verbatim: the money math, ranking,
    compliance logic, quote lifecycle and idempotency are real and tested; FX
-   rates and fees are labeled snapshot fixtures; settlement is simulated by
-   design (testnet-ready adapter, never shown as a real ledger transaction);
+   rates and fees are labeled snapshot fixtures; settlement is via a simulated adapter clearly labeled in the UI (`network: SIMULATED`); testnet integration is a future milestone and has never been shown as a real ledger transaction;
    the sanctions list is a 10-entry local sample; the GNN benchmark is
    synthetic. Every simulated surface is labeled in the UI.

@@ -52,7 +52,7 @@ the claim-by-claim truth table lives in [REAL_VS_SIMULATED.md](../REAL_VS_SIMULA
   not the OFAC SDN export. The matcher is not a legal screening tool and has
   never been validated against real sanctions data.
 - **Not fraud detection.** The trained GNN is prototype evidence on a
-  *synthetic* benchmark (AUC 0.9038; a linear rule matches it — `ml/ablation.md`).
+  *synthetic* benchmark (AUC 0.9038; a linear rule matches it — `../backend/ml/ablation.md`).
   The explainable deterministic rule is the shipped default.
 - **Not production pricing.** All FX/fees are labeled fixture snapshots
   (`data/sources.md`: everything UNVERIFIED until sourced). The uplift

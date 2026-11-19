@@ -43,15 +43,15 @@ parties against the sample sanctions list as if it were authoritative.
 
 **Known failure modes & limitations:**
 - *Risk model:* the shipped GCN is trained on a **synthetic** benchmark
-  (`ml/eval.json`: held-out AUC 0.9038 with a documented ~0.94 ceiling under 2%
-  label noise and 1:7 imbalance; ablation in `ml/ablation.md`). Three honesty
+  (`../backend/ml/eval.json`: held-out AUC 0.9038 with a documented ~0.94 ceiling under 2%
+  label noise and 1:7 imbalance; ablation in `../backend/ml/ablation.md`). Three honesty
   constraints travel with every claim:
   1. **Generator mirroring** — the benchmark's fraud/normal feature ranges are
      the same signals the stand-in rule scores, so the metrics measure how well
      a model learns *that generator's* separability and may substantially
      overstate real-world effectiveness. Prototype evidence, not proof of
      production fraud detection.
-  2. **Class-specific error analysis** (in `ml/eval.json`) — at the train-tuned
+  2. **Class-specific error analysis** (in `../backend/ml/eval.json`) — at the train-tuned
      operating threshold (0.51): TP 52 / FP 3 / FN 8 / TN 417 (FPR 0.7%, FNR
      13.3%). At the **0.8 production review gate the trained model flags
      nothing** (recall 0.0, FNR 100%) — its raw sigmoids are uncalibrated and
@@ -63,7 +63,7 @@ parties against the sample sanctions list as if it were authoritative.
      leakage is possible (each transaction is an independent 4-node subgraph;
      batching merges disjoint subgraphs), but the split is per-transaction —
      NOT per-sender or temporal — so production evaluation must split by
-     sender/time. Same-split baselines (`ml/ablation.md`): linear rule 0.9185,
+     sender/time. Same-split baselines (`../backend/ml/ablation.md`): linear rule 0.9185,
      logistic 0.9217, boosted stumps 0.9068, GCN 0.9130 — **the simple
      explainable rule matches the deep model**, which is why it is preferred.
 - *Screening:* fuzzy matching (normalized Jaro-Winkler + coverage) has

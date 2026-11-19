@@ -10,7 +10,7 @@ depends on this file existing with real counts.
   (UAE corridor first; KSA second).
 - Channel: `# SOURCE NEEDED` — team to run in person / via community groups.
 - Owner: Frontend & UX Lead (survey instrument) + all members (collection).
-- Deadline to have results: Oct 30 (video day is Oct 31).
+- Status at submission: no survey responses have been collected; the instrument is ready for the pilot phase.
 
 ## Questionnaire (draft)
 
@@ -82,7 +82,7 @@ only honest answer is:
 
 > "We have not run user validation yet — we didn't want to fabricate numbers.
 > The survey instrument and a 5-interview script are ready
-> (docs/validation/survey.md); results go into this file with real counts as
+> (validation/survey.md); results go into this file with real counts as
 > soon as the team runs them."
 
 Do NOT present assumptions, intuition, or the demo persona as user evidence.

@@ -3,7 +3,7 @@
 **Grounded numbers (all recomputed Oct 27, traceable in-repo):** best route
 net ৳33,423.20 on AED 1,000 incl. xPay's AED 2 fee · legacy SWIFT ৳32,432.40 ·
 uplift +3.05% (survives to +2.59% at a 1.5% anchor spread —
-`docs/stellar-sensitivity.md`) · recall 11/11, review volume 8/1,000
+`docs/stellar-sensitivity.md`) · recall 11/11, review volume 0/1,000 local (40/1,000 vs real 19,484-entry SDN)
 (`reports/review_volume.json`) · p95 21.2 ms end-to-end
 (`reports/load_test.txt`).
 
@@ -61,5 +61,5 @@ structure both must match — update numbers HERE first.)*
 - [ ] Attach the Bangladesh Bank release URL for the market-size figure
 - [ ] Fill `docs/competitive-scan.md` (5 alternatives) or keep "the only one we found" scoping
 - [ ] Fill `docs/validation/survey.md` if responses exist; else drop "users told us" lines
-- [ ] NRB decision per `docs/nrb/README.md` (Oct 30): cite the note or drop the claim
+- [ ] NRB decision per `docs/nrb/README.md`: no advisor claimed at submission; cite only if confirmed
 - [ ] Re-run `make scenarios` and sync any changed numbers into this file

@@ -1,5 +1,7 @@
 # xPay — Submission Plan (Oct 24 → Oct 31) — v2, corrected
 
+> **Historical planning document — Oct 24-31, 2026.** This plan covered the preliminary submission window (deadline Oct 31, 11:59 PM GMT+6, plan to submit Oct 29). It is preserved for auditability but is no longer operational; the engineering is complete and the repository is in final-audit state as of 2026-10-28. Do not plan from this file.
+
 Deadline: **Oct 31, 2026, 11:59 PM GMT+6** (Idea to Unicorn preliminary). **Plan: submit Oct 29** — do not wait for Oct 31. The engineering is done; the packaging is the only thing between us and the preliminary. This v2 supersedes the earlier plan: recording moved up to Oct 25–26, submission to Oct 29, and three concrete artifacts are assigned today/tomorrow (portal-requirements paragraph, unit economics, NRB outreach log).
 
 ## ⚙️ Decision record
@@ -33,12 +35,12 @@ Rule: if none respond by Oct 30, omit the NRB claim entirely — never fabricate
 | :--- | :--- | :--- | :--- |
 | **Today (Oct 24)** | Open the portal submission form; record every video requirement in the section above. | Team lead | Portal-requirements paragraph filled |
 | **Today (Oct 24)** | Send 15 NRB LinkedIn messages (template above); track replies in the log. | Least technical teammate | 15 sent; log live |
-| **Today (Oct 24)** | ✅ Unit-economics model drafted — business lead validates the three numbers (take rate, CAC, 6-month target) and tunes the assumptions. | Business lead | [docs/unit-economics.md](unit-economics.md) |
+| **Today (Oct 24)** | ✅ Unit-economics model drafted — business lead validates the three numbers (take rate, CAC, 6-month target) and tunes the assumptions. | Business lead | [unit-economics.md](unit-economics.md) |
 | **Oct 25** | Verify the money figures against Bangladesh Bank releases (no unverified stat goes on camera); finalize one-pager text. | Routing lead | Verified stats in script |
-| **Oct 25–26** | **Record the video** against the five segments (docs/demo-script.md): fuzzy-hold shot at 1:30, Bangla quote screen at 1:45. Rough cut by Oct 26 night. | Frontend + editor | Rough cut |
+| **Oct 25–26** | **Record the video** against the five segments (demo-script.md): fuzzy-hold shot at 1:30, Bangla quote screen at 1:45. Rough cut by Oct 26 night. | Frontend + editor | Rough cut |
 | **Oct 27** | Internal screening: someone who has NOT seen the product watches once and says what it does. If they can't, re-cut same day. | Whole team | Final cut |
 | **Oct 27** | Host the demo publicly (Vercel + Render/Fly, or docker compose on a VPS). Keep local fallback + offline backup recording. | Backend lead | A URL a judge can click |
-| **Oct 28** | Draft the 3-minute spoken pitch (docs/pitch-script.md — already drafted; rehearse twice with a stopwatch) | Presenter | Rehearsed pitch |
+| **Oct 28** | Draft the 3-minute spoken pitch (pitch-script.md — already drafted; rehearse twice with a stopwatch) | Presenter | Rehearsed pitch |
 | **Oct 29** | **Submit** the video and all portal fields. Screenshot the confirmation. | Team lead | Confirmation |
 | **Oct 30–31** | Buffer: NRB follow-ups, one-pager polish, portal corrections. | All | — |
 

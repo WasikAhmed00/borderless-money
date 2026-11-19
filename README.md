@@ -3,422 +3,239 @@
 </p>
 <h1 align="center">xPay</h1>
 
-> **Agentic, jurisdiction-aware remittance intelligence that maximizes the money that actually arrives.**
+<p align="center">AI-assisted, jurisdiction-aware remittance intelligence that recommends the eligible route with the highest recipient net amount and explains every decision.</p>
 
-| | |
-| :--- | :--- |
-| **Hackathon** | [International AI Builders Congress 2026](https://cloudcampbd.com/ai-builders-congress) |
-| **Track** | Idea to Unicorn |
-| **Domain** | FinSphere AI |
-| **Challenge** | Borderless Money — Cross-border payments and remittance intelligence |
-| **Default corridor** | 🇦🇪 UAE (AED) → 🇧🇩 Bangladesh (BDT) |
-
-## 👥 Team — CTRL V
-
-| Member | GitHub |
-| :--- | :--- |
-| [**Sukonya Dutta Pushpa**](https://github.com/Dutta-Pushpa) — Captain | [@Dutta-Pushpa](https://github.com/Dutta-Pushpa) |
-| [Taskif Bin Parves](https://github.com/taskifbin) | [@taskifbin](https://github.com/taskifbin) |
-| [Wasik Ahmed](https://github.com/WasikAhmed00) | [@WasikAhmed00](https://github.com/WasikAhmed00) |
-| [Fahim Ahmed](https://github.com/Fahim1150) | [@Fahim1150](https://github.com/Fahim1150) |
-| [Alisha Akter](https://github.com/alisha-akter) | [@alisha-akter](https://github.com/alisha-akter) |
+<p align="center">
+  <a href="https://cloudcampbd.com/ai-builders-congress">International AI Builders Congress 2026</a> · FinSphere AI · Challenge: Borderless Money<br/>
+  <strong>Team CTRL V</strong> — Idea to Unicorn
+</p>
 
 ---
 
-## 📋 Project Overview
+## Problem
 
-xPay is an agentic remittance orchestrator for the UAE → Bangladesh corridor. Migrant
-workers say *“Send 1,000 dirhams to my mother’s bKash in Dhaka”* — and a two-layer AI
-system parses the intent, scores every viable payout rail, screens the transaction
-against predictive RegTech, explains its decision in plain language, and executes on
-the cheapest/fastest compliant route.
+Bangladesh is among the world's largest remittance recipients. Workers in the UAE sending AED 1,000 home typically lose 3–6% to FX spreads and stacked fees, and almost no consumer app computes the **Bangladesh Bank 2.5% cash incentive** for formal-channel remittance into the route choice. Existing tools optimize headline fees, not the taka that actually arrives, and they do not explain compliance holds in plain language.
 
-**Product positioning:** a **B2B Remittance-Intelligence API** with a user-facing
-demonstration app — *"help remittance providers and fintech platforms compare eligible
-transfer routes, maximize the recipient's net amount, understand compliance restrictions,
-and explain every recommendation using traceable evidence."* Business model, ROI model
-(unit-tested, frontend calculator at `/roi`) and validation plan:
-[docs/PRODUCT_STRATEGY.md](docs/PRODUCT_STRATEGY.md).
+**Primary user:** a UAE-based migrant worker sending to family in Bangladesh via bKash/Nagad/bank, often on a mid-range Android, often in Bangla and by voice. **Secondary user:** a remittance fintech or mobile-money operator evaluating routes through an API.
 
-### Execution safety (quote lifecycle)
+## Solution
 
-Every quote is a persisted artifact (`quote_id` + expiry). Execution **binds** to the
-confirmed quote: expired, consumed, mismatched or unconfirmed quotes are refused; the
-receipt uses the quoted numbers verbatim; `Idempotency-Key` makes retries safe; and an
-injected settlement `TIMEOUT` is reported as `RECONCILIATION_REQUIRED` — never as
-success. All math is exact-decimal (`docs/FINANCIAL_MODEL.md`); routes with missing
-pricing are flagged and can never win or settle.
+**xPay is an AI-assisted, jurisdiction-aware remittance intelligence prototype that helps compare eligible transfer routes, calculate recipient net amounts, explain routing decisions, and demonstrate compliance-aware transfer workflows.**
 
-### 🌟 The Killer Differentiator: True Net-Receive Optimization
+A worker says *"Send 1,000 dirhams to my mother's bKash in Dhaka"* — xPay parses intent, prices every viable rail end-to-end (FX, rail fee, last-mile fee, platform fee, and incentive eligibility), screens for risk and sanctions, ranks routes by reliability-adjusted net amount, and shows a receipt with a full audit trail. The worker confirms an exact, time-bound quote before any transfer step is demonstrated.
 
-Most apps hide fees and spreads. xPay calculates the **exact amount the recipient
-gets** — including the **Bangladesh Bank’s official 2.5% cash incentive** for formal
-remittance (Bangladesh Bank, SME & Remittance Department circulars). Every term below is
-in BDT: fees quoted in AED are converted at the same rate before they are subtracted —
-that is how the engine computes it (`app/services/incentive.py`, contract in
-[docs/FINANCIAL_MODEL.md](docs/FINANCIAL_MODEL.md)).
+The core value is **recipient net-receive optimization with transparent, explainable trade-offs**, not hidden cheapest-fee marketing.
 
-$$
-\begin{aligned}
-\text{Gross}_{BDT}&=\text{Principal}_{AED}\times\text{FX}\\
-\text{Fees}_{BDT}&=\text{Fees}_{AED}\times\text{FX}\\
-\text{Net}_{BDT}&=\text{Gross}_{BDT}-\text{Fees}_{BDT}\\
-&\quad+\text{Eligible incentive}_{BDT}
-\end{aligned}
-$$
+## How xPay works
 
-The incentive is **not assumed for every transfer**: it is computed per route under the
-applicable policy — the Bangladesh Bank cash incentive applies to qualifying
-formal-channel remittance, so it is added only on rails flagged `incentive_eligible`
-(see the incentive-eligibility flag in `backend/config/corridors/uae_bd.json` —
-the ineligible Cash Pickup rail earns 0 even with the best headline FX).
+1. **Voice or text input** — Web Speech API on the frontend; multilingual intent parser on the backend (English, Bangla, Banglish, and evaluated Arabic phrases).
+2. **Agentic orchestrator (LangGraph)** — a state machine that calls deterministic Python tools in order: intent parsing → rail pricing → risk and compliance screening → ranking and explanation. An identical sequential fallback runs when LangGraph is not installed, so the demo never depends on the graph runtime.
+3. **Scoring and execution engine (Python)** — corridor-driven rail pricing, exact-decimal incentive math, OFAC-aware fuzzy screening with human-review outcomes, and a clearly labeled simulated settlement adapter. Every quote is persisted with a TTL and must be explicitly confirmed at execution.
+4. **Receipt and monitoring** — status, amount, route, timing, reference ID, simulated ledger hash, and ISO 20022 payload, with metrics exposed at `GET /metrics`.
 
-**Worked example — sending AED 1,000 to bKash through xPay (simulated quotes):**
+Full flow, failure paths, and the quote lifecycle are documented in [docs/architecture.md](docs/architecture.md) and [docs/FINANCIAL_MODEL.md](docs/FINANCIAL_MODEL.md).
 
-| Route | FX Rate | Total Fees | Govt Incentive (2.5%) | **True Net Receive** | Time |
+## Demo
+
+- **Live app:** `http://localhost:3000` after `docker compose up --build` (or `npm run dev` in `frontend/` + `uvicorn app.main:app` in `backend/`).
+- **Bilingual UI:** `EN | বাংলা` toggle on all screens, persisted in `xpay-lang`; Bangla voice and numerals are handled end-to-end.
+- No public demo link is claimed in this repository — run the stack locally to reproduce the screenshots and metrics below.
+
+## Key features (verified in code)
+
+- **Multilingual intent parsing** — rule-based, deterministic where money is involved; handles Bengali numerals, inflections, and Banglish transliteration.
+- **Corridor-driven routing** — rails, FX, fees, and incentive eligibility are data in `backend/config/corridors/*.json`; adding a corridor is a new file, not code. Ranked by reliability-adjusted net (`true_net × success_rate`).
+- **Exact-decimal financial engine** — all money math in `Decimal` with half-up rounding, missing pricing flagged as `incomplete` and barred from winning or settling.
+- **Compliance-aware workflow** — OFAC-aware fuzzy screening (normalized Jaro + coverage) with `CLEAR` / `REVIEW` / `BLOCKED` outcomes, GNN risk scoring (experimental, synthetic), and plain-language explanations.
+- **Quote lifecycle and safety** — persisted `quote_id` + 60-minute expiry, confirmation binding, `Idempotency-Key` retries, and uncertain settlement reported as `RECONCILIATION_REQUIRED`, never as success.
+- **Regulatory retrieval** — cited passages from Bangladesh Bank, OFAC, and ISO 20022 excerpts are returned as `regulatory_basis` in every quote and execution response.
+- **Bangla-capable frontend** — Next.js 14 + Tailwind, voice input, and the `/roi` operator ROI calculator.
+
+See [docs/api-contracts.md](docs/api-contracts.md) for request/response contracts and [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md) for the implementation truth table.
+
+## Example calculation
+
+xPay ranks routes by what the family **actually receives**, not headline fees. The Bangladesh Bank incentive is applied only where `incentive_eligible` is true per `backend/config/corridors/uae_bd.json`.
+
+```
+Gross  = Principal(AED) × FX
+Fees   = Fees(AED) × FX
+Net    = Gross − Fees + Eligible incentive(BDT)
+```
+
+**Reproducible example — AED 1,000 to bKash (simulated snapshots, corridor math):**
+
+| Route | FX | Fees (AED) | Incentive (BDT) | True net receive (BDT) | Time |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| **Stellar Hybrid Anchor → bKash** ✅ | 32.80 | 6.00 AED *(3.00 rail + 1.00 last-mile + **2.00 xPay fee**)* | **+820.00 BDT** | **33,423.20 BDT** | 2 h |
-| Exchange House MTO → bKash | 32.30 | 14.00 AED *(incl. 2.00 xPay fee)* | +807.50 BDT | 32,655.30 BDT | 6 h |
-| Traditional SWIFT → bKash (via xPay) | 32.40 | 26.00 AED *(incl. 2.00 xPay fee)* | +810.00 BDT | 32,367.60 BDT | 28 h |
-| *Legacy counterfactual: Traditional SWIFT sent outside xPay* | 32.40 | 24.00 AED | +810.00 BDT | 32,432.40 BDT | 28 h |
+| **Stellar Hybrid Anchor → bKash** (recommended) | 32.80 | 6.00 (3.00 rail + 1.00 last-mile + 2.00 xPay) | +820.00 | **33,423.20** | 2 h |
+| Exchange House MTO → bKash | 32.30 | 14.00 | +807.50 | 32,655.30 | 6 h |
+| Traditional SWIFT → bKash (via xPay) | 32.40 | 26.00 | +810.00 | 32,367.60 | 28 h |
+| *Legacy SWIFT outside xPay (counterfactual, no platform fee)* | 32.40 | 24.00 | +810.00 | 32,432.40 | 28 h |
 
-The AI-recommended route delivers **990.80 BDT more (+3.05%)** than the legacy bank rail —
-after xPay's own AED 2.00 sender fee is paid —
-and the receipt shows exactly why, line by line.
+The recommended rail delivers **990.80 BDT more (+3.05%)** than the legacy baseline after xPay's own fee is paid. The receipt shows the same line items. All figures are recomputable from `backend/config/corridors/uae_bd.json` and `backend/app/services/incentive.py`; see [docs/FINANCIAL_MODEL.md](docs/FINANCIAL_MODEL.md) for rounding, completeness, and eligibility rules.
 
-### 🎯 Target Users
-1. **Primary:** UAE-based migrant workers (low-literacy, voice-first UX in Bengali / Arabic / English).
-2. **Secondary:** Bangladeshi fintechs & mobile money operators (B2B Remittance-as-a-Service API).
+## Architecture
 
----
-
-## 🏗️ Architecture (Two-Layer Agentic Orchestration)
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                              │
-│  📱 Web App (Next.js)  │  🎤 Voice (Web Speech API / Whisper)   │
-│  📞 USSD Gateway (planned)  │  🔌 B2B RaaS API (REST)           │
-└─────────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│           LAYER B: AGENTIC ORCHESTRATOR (LangGraph)              │
-│  🧠 Intent Parser   →  🔄 Tool Router   →  📝 Explainer           │
-│  (plain-text reasoning log for every decision — XAI by default)  │
-└─────────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│            LAYER A: SCORING & EXECUTION ENGINE (Python)          │
-│  📊 Routing Scorer (rail pricing: EV ranking + incentive gate)   │
-│  🛡️ Predictive RegTech (GNN risk scoring, PyTorch Geometric)     │
-│  ⚖️ Compliance Gate (OFAC fuzzy matching + ISO 20022 mapping)    │
-│  💱 FX & Incentive Calc (snapshot rate + 2.5% BD Govt incentive) │
-└─────────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   DATA & INTEGRATION LAYER                       │
-│  ⛓️ Simulated settlement (testnet-ready) │ 🔗 FX feeds │ 📜 OFAC (local) │
-│  🏦 bKash/Nagad mock payout │ 🗄️ PostgreSQL schema + demo store │
-└─────────────────────────────────────────────────────────────────┘
+```
+Client (Next.js + Voice) → Agentic orchestrator (LangGraph / sequential fallback)
+  → Scoring engine: routing scorer · incentive calculator · GNN risk + OFAC screening
+  → Quote store → Confirmation gate → Simulated settlement → Receipt
+                               ↘ Regulatory RAG (cited passages)
 ```
 
-### Project architecture graph
+- **Layer B (orchestrator):** `backend/app/agent/orchestrator.py`
+- **Layer A (scoring):** `backend/app/services/` — incentive, routing, compliance, risk, corridor, intent, RAG, money, quotes, store, stellar
+- **Data:** `backend/config/corridors/*.json`, `backend/data/*.json`, `backend/rag/corpus/`
+- **ML:** `backend/ml/train_gnn.py` + `backend/ml/model.pt` (synthetic)
 
-```mermaid
-flowchart TB
-    U["User: Mobile / Web / Voice"] --> B["Layer B: Agentic Orchestrator"]
-    B --> P["Parse intent and validate request"]
-    P --> R["Layer A: Deterministic Routing Engine"]
-    P --> C["Compliance and Risk Engine"]
-    R --> D["Fee, FX and Incentive Calculator"]
-    D --> G["Policy and Eligibility Gate"]
-    C --> G
-    G -->|Eligible| E["Rank routes and explain trade-offs"]
-    G -->|Review or blocked| H["Review / Reject / Request information"]
-    E --> A["User confirms exact quote"]
-    A --> V["Revalidate quote and compliance"]
-    V --> X{"Settlement adapter"}
-    X --> F["Fiat provider or clearly labeled simulation"]
-    X --> S["Simulated settlement (testnet-ready)"]
-    F --> L["Transfer status and audit log"]
-    S --> L
-    L --> O["Receipt, metrics and monitoring"]
-```
+Details, sequence diagram, and failure paths: [docs/architecture.md](docs/architecture.md).
 
-Full details: [docs/architecture.md](docs/architecture.md)
+## AI and ML components
 
-### Feature Breakdown
+| Component | Role | Status |
+| :--- | :--- | :--- |
+| Multilingual intent parser | Extracts amount, corridor, payout method, recipient, urgency from text/voice | **Implemented** — rule-based, deterministic |
+| LangGraph orchestrator | Calls tools in order and logs reasoning | **Implemented** — with sequential fallback |
+| Routing scorer | Prices rails end-to-end and ranks by reliability-adjusted net | **Implemented** — exact-decimal |
+| GNN risk model (`RemittanceGNN`, PyTorch Geometric) | Scores pre-settlement risk on a transaction graph | **Experimental** — trained on synthetic data (2,400 transactions, AUC 0.9038 on held-out split; see limitations) |
+| Logistic regression / rule stand-ins | Baselines for the same synthetic task | **Experimental** — ablation shows no GNN advantage on this data |
+| OFAC fuzzy matcher | Normalized Jaro + coverage with rationale | **Implemented** — sample list only |
+| Regulatory RAG | Retrieves cited Bangladesh Bank / OFAC / ISO 20022 passages | **Implemented** — lexical fallback if embeddings unavailable |
+| Bounded LLM | Optional schema-validated intent assistance | **Experimental** — off by default, never does arithmetic |
 
-| # | Feature | Layer | Status in this repo |
-| :--- | :--- | :--- | :--- |
-| 1 | **Voice / NL remittance** (low-literacy UX) | Frontend | ✅ Web Speech API + rule-based multilingual intent parser (`intent_parser.py`) |
-| 2 | **Two-layer agentic orchestration** | Layer B | ✅ LangGraph graph with deterministic Python tools; sequential fallback when LangGraph isn’t installed |
-| 3 | **Predictive RegTech** (pre-settlement GNN risk) | Layer A | ✅ PyTorch Geometric `RemittanceGNN` in repo + deterministic stand-in inference so the demo always works |
-| 4 | **Jurisdiction-aware routing + 2.5% incentive math** | Layer A | ✅ Corridor rail pricing + `calculate_true_net_receive`; incentive eligibility is routing logic; ranked by expected value with a naive cheapest-fee baseline |
+LLM outputs are schema-validated and cannot override financial calculations; see [docs/SECURITY_AND_RESPONSIBLE_AI.md](docs/SECURITY_AND_RESPONSIBLE_AI.md).
 
----
+## Real vs simulated
 
-## 📁 Repository Layout
+Every simulated surface is labeled **Simulated** in the UI and API (`simulated: true`, `network: SIMULATED`). The full truth table is in [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md).
 
-```text
-xpay/
-├── README.md                  ← you are here (project overview)
-├── docs/
-│   ├── architecture.md        ← layers, data flow, real-vs-simulated
-│   ├── api-contracts.md       ← JSON contracts for all endpoints (team contract)
-│   ├── demo-script.md         ← the winning 3-minute demo script
-│   └── sprint-plan.md         ← 11-day sprint to Oct 31
-├── backend/
-│   ├── app/
-│   │   ├── main.py            ← FastAPI app (RaaS API) incl. GET /metrics
-│   │   ├── config.py          ← corridor + demo settings (from corridor config)
-│   │   ├── agent/
-│   │   │   └── orchestrator.py    ← Layer B: LangGraph state machine (+ fallback)
-│   │   ├── services/
-│   │   │   ├── incentive.py       ← True Net Receive engine (2.5% BD incentive)
-│   │   │   ├── routing_scorer.py  ← corridor rail pricing: EV ranking, incentive
-│   │   │   │                        eligibility, deadline filter, naive baseline
-│   │   │   ├── corridor.py        ← loads config/corridors/*.json (rules as data)
-│   │   │   ├── intent_parser.py   ← multilingual NL/voice intent extraction
-│   │   │   ├── gnn_risk.py        ← risk scoring: trained GCN flag + stand-in,
-│   │   │   │                        decision-log explanations
-│   │   │   ├── compliance.py      ← sanctions matcher v2 (normalized Jaro +
-│   │   │   │                        coverage, rationale) + pacs.008 subset
-│   │   │   ├── llm.py             ← bounded LLM access (schema-validated, off
-│   │   │   │                        by default)
-│   │   │   ├── explainer.py       ← grounded en/bn explanations (number guard)
-│   │   │   ├── regulatory_rag.py  ← cited regulatory retrieval (MiniLM or
-│   │   │   │                        lexical fallback)
-│   │   │   ├── horizon.py         ← live Stellar Horizon reachability probe
-│   │   │   ├── stellar.py         ← settlement — SIMULATED by design
-│   │   │   ├── metrics.py         ← GET /metrics: measured KPIs from eval sets
-│   │   │   └── store.py           ← transaction store (memory/SQLite)
-│   │   └── db/
-│   │       └── schema.sql         ← PostgreSQL schema (production store)
-│   ├── config/corridors/      ← uae_bd.json + ksa_bd.json (rules as data)
-│   ├── data/                  ← FX snapshot, OFAC sample + eval sets, recipients
-│   ├── rag/corpus/            ← BB / OFAC / ISO 20022 excerpts (cited chunks)
-│   ├── ml/                    ← train_gnn.py + ablation.py + model.pt + evals
-│   ├── evals/                 ← eval_sanctions.py, eval_rag.py (make targets)
-│   ├── tests/                 ← test_core, test_smoke, test_step3, test_step4
-│   ├── Dockerfile             ← full-system backend image
-│   ├── requirements-{full,lite}.txt
-│   └── run_demo.py            ← end-to-end happy path in the terminal
-├── frontend/                  ← Next.js 14 (TS + Tailwind): 4-screen flow,
-│   └── app/ components/ lib/     Bangla toggle, mic, blockchain trail
-├── docker-compose.yml         ← backend + frontend, `docker compose up --build`
-├── Makefile                   ← smoke / test / evals / ablation / docker targets
-├── .github/workflows/ci.yml   ← fresh-checkout CI (tests + docker image)
-└── REAL_VS_SIMULATED.md       ← claim-by-claim truth table
-```
+| Capability | Real (in this repo) | Simulated / mocked |
+| :--- | :--- | :--- |
+| 2.5% incentive math | Real policy, real engine | Pricing is demo snapshots |
+| Routing and fee comparison | Real engine, config-driven | Corridor FX/fees are snapshots |
+| OFAC screening | Real fuzzy-matching engine | Sample sanctions list (local JSON) |
+| GNN risk scoring | Prototype model shipped (`ml/model.pt`) with published eval and ablation | Trained on synthetic data; deterministic stand-in is the default |
+| Stellar settlement | Deterministic simulated adapter, clearly labeled | Testnet path payment is a future milestone — requires funded issuer/distributor and trustlines |
+| bKash/Nagad payout | — | Mock recipient registry |
+| FX feeds, live bKash/Nagad APIs, licensed remittance integration | — | Future milestones, not claimed as working |
 
----
+xPay is a research and hackathon prototype, not a licensed remittance provider.
 
-## 🚀 Quickstart
+## Verified evaluation results
 
-### Docker (full system — recommended)
+All numbers below are computed from this repository and served at `GET /metrics`. The **single source of truth** is [docs/kpis.md](docs/kpis.md) — other documents reference it. Curated and synthetic benchmarks are labeled as such and are not production statistics.
 
+| KPI | Measured | Target | How |
+| :--- | ---: | :--- | :--- |
+| Net-receive uplift vs SWIFT (AED 1,000 → bKash) | **+3.05%** | ≥ 3.0% | 33,423.20 vs 32,432.40 (corridor math) |
+| Intent accuracy (en/bn/ar) | **100%** | ≥ 95% | 49 curated utterances (`backend/data/intent_eval.json`) |
+| p95 quote latency (end-to-end HTTP) | **21.2 ms** | ≤ 3,000 ms | 300 loopback `POST /api/agent/quote` (`reports/load_test.txt`) |
+| False-positive hold rate | **0.0%** | ≤ 2.0% | 21 clear names (`data/sanctions_eval.json`) |
+| OFAC recall (exact/leet hits) | **100%** | 100% | 11 true hits BLOCKED on 58-case benchmark |
+| GNN test AUC (synthetic — prototype evidence) | **0.9038** | — | Held-out split (ceiling ≈0.94 at 2% label noise); linear rule matches it — see `backend/ml/ablation.md` |
+| Producer risk gate recall at 0.8 | **0.0%** | — | Raw GNN scores never reach the policy threshold; recalibration required before review use |
+
+See [docs/kpis.md](docs/kpis.md) for methodology and [docs/VALIDATION_REPORT.md](docs/VALIDATION_REPORT.md) for reproduction steps.
+
+## Quickstart
+
+**Docker (recommended, full stack):**
 ```bash
 docker compose up --build
 # backend  → http://localhost:8000  (API docs at /docs)
 # frontend → http://localhost:3000
 ```
 
-The backend image installs the **full** stack (LangGraph, PyG risk model,
-embeddings) from `backend/requirements-full.txt`. Just the backend image:
-
-```bash
-docker build -t xpay-backend -f backend/Dockerfile backend
-docker run -p 8000:8000 xpay-backend
-```
-
-Verified: the image builds, boots in ~10 s, and serves the exact demo numbers
-(৳33,423.20) — see [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md).
-
-### Backend (FastAPI, local venv)
-
+**Backend (local venv):**
 ```bash
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-full.txt   # or requirements-lite.txt for the fast path
+pip install -r requirements-full.txt  # or requirements-lite.txt for the fast path
 uvicorn app.main:app --reload --port 8000
-# API docs: http://localhost:8000/docs
 ```
 
-No time for installs? The core engines are dependency-free — verify them directly:
-
-```bash
-python3 backend/tests/test_core.py    # unit tests (stdlib only)
-python3 backend/run_demo.py           # full happy path → prints a receipt
-```
-
-### Frontend (Next.js)
-
+**Frontend:**
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local      # points at http://localhost:8000
-npm run dev                           # http://localhost:3000
+cp .env.local.example .env.local  # points at http://localhost:8000
+npm run dev
 ```
 
-Voice input uses the browser `Web Speech API` (Chrome/Edge). A text fallback is
-always available.
+**No-install verification:**
+```bash
+python3 backend/tests/test_core.py   # core engines, stdlib only
+python3 backend/run_demo.py          # end-to-end quote → receipt in the terminal
+```
 
-### Demo scenarios (built in)
+**Demo scenarios:** pass `demo_scenario` in `POST /api/agent/execute` or pick it in the UI — `default` (CLEAR), `fuzzy_review` (near-match held for review), `high_risk` (manual review).
 
-| Scenario | What it shows |
-| :--- | :--- |
-| `default` | Happy path: voice intent → routing with 2.5% incentive → CLEAR compliance → simulated settlement (clearly labeled) → receipt |
-| `fuzzy_review` | OFAC near-match (`Nasir Uddin Chowdhury` ≈ `Nasir Uddin Chaudhury`) → held for human review with a plain-language explanation |
-| `high_risk` | GNN flags a high-risk graph pattern (new device + new recipient + abnormal amount) → manual review |
-
-Pass `demo_scenario` in `POST /api/agent/execute`, or pick it in the UI.
-
----
-
-## 🔌 API Summary
+## API overview
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
-| `GET` | `/api/health` | Liveness + available corridors + which optional engines are active |
-| `GET` | `/api/ready` | Readiness: config + store checks |
-| `POST` | `/api/agent/parse-intent` | Text/voice transcript → structured intent (en/bn/ar) |
-| `POST` | `/api/agent/quote` | Orchestrated quote: intent → ranked routes (True Net Receive) → regulatory citations → **persisted quote_id** |
-| `POST` | `/api/agent/execute` | Compliance gate → quote binding/revalidation → execution → receipt. `Idempotency-Key` honored |
-| `GET` | `/api/transactions/{id}` | Fetch a stored transaction receipt |
-| `GET` | `/api/quotes/{quote_id}` | Quote details with live status (`ACTIVE`/`EXPIRED`/`CONSUMED`) |
-| `GET` | `/api/routes/compare` | Direct Layer A access: compare routes (`?corridor=uae_bd\|ksa_bd`) |
-| `GET` | `/metrics` | Measured KPIs (computed from in-repo eval sets — never invented) |
+| `GET` | `/api/health` | Liveness + corridors + engine flags |
+| `GET` | `/api/ready` | Readiness checks |
+| `POST` | `/api/agent/parse-intent` | Text/voice → structured intent (en/bn/ar) |
+| `POST` | `/api/agent/quote` | Intent → ranked routes → citations → persisted `quote_id` |
+| `POST` | `/api/agent/execute` | Compliance gate → quote binding → simulated execution → receipt (`Idempotency-Key` honored) |
+| `GET` | `/api/transactions/{id}` | Stored receipt |
+| `GET` | `/api/quotes/{quote_id}` | Quote with live status `ACTIVE/EXPIRED/CONSUMED` |
+| `GET` | `/api/routes/compare` | Direct rail comparison (`?corridor=uae_bd`) |
+| `GET` | `/metrics` | Measured KPIs (from in-repo eval sets) |
 
-Cross-cutting: `X-Request-ID` on every response · per-IP rate limiting on `/api/*`
-(ops probes exempt) · optional API-key enforcement (`XPAY_API_KEY`).
-Full request/response JSON: [docs/api-contracts.md](docs/api-contracts.md)
+Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*`, optional `XPAY_API_KEY`. Contracts: [docs/api-contracts.md](docs/api-contracts.md).
 
----
+## Repository structure
 
-## 🧠 Measured KPIs
-
-`GET /metrics` returns five KPIs computed from this repository — no invented numbers:
-
-| KPI | Measured | How |
-| :--- | ---: | :--- |
-| Net-receive uplift vs SWIFT | **+3.05%** | corridor math, AED 1,000 (৳33,423.20 best route incl. xPay's AED 2 fee vs ৳32,432.40 legacy SWIFT) |
-| Uplift at 1.5% anchor spread (pessimistic) | **+2.59%** (table range +2.59–3.63%) | anchor-pricing sensitivity, [docs/stellar-sensitivity.md](docs/stellar-sensitivity.md) |
-| 1,000-transfer simulation uplift | **+3.53% mean** (1.57–11.08%) | EV-ranked vs current channel, `reports/simulation_1000.json` |
-| Manual-review volume | **0 / 1,000 transfers** (10-entry local list; **40 / 1,000** vs the real 19,484-entry OFAC SDN file) | `reports/review_volume.json` + real-list run of 2026-10-28 (`data/sources.md`) |
-| Intent accuracy (en/bn/ar) | **100%** | 49-utterance curated benchmark (`data/intent_eval.json`) |
-| p95 quote latency | **21.2 ms end-to-end HTTP** | `reports/load_test.txt` (300 POST /api/agent/quote, loopback) |
-| Compliance false-positive hold rate | **0.0%** | 21 labeled clear names (`data/sanctions_eval.json`) |
-| OFAC screening recall | **100%** | 11 labeled true positives (exact/leet after normalization; alias-only matches are held for review, not blocked) (`data/sanctions_eval.json`) |
-
-Definitions & honesty notes: [docs/kpis.md](docs/kpis.md)
-
-About the simulation row: in all 1,000 synthetic transfers, fee-only and
-cost-only ranking pick the incentive-ineligible promo rail (it has the lowest
-fee), so incentive-aware EV ranking disagrees on **100% of transfers** — that
-disagreement is exactly the 2.5% incentive being computed into the route
-choice. Amounts/payout mix are synthetic assumptions; the pricing is the real
-engine (`reports/simulation_1000.json`).
-
-## 🧩 Upgrade highlights (Oct 25 — B2B + financial-integrity pass)
-
-- **Exact-decimal money engine** — all monetary arithmetic in `Decimal` (`services/money.py`); half-up rounding at display edges, exact `*_exact` strings in every breakdown, NaN/garbage rejected, missing fees flagged (never zeroed) and such routes barred from winning *and* settling.
-- **Quote lifecycle** — persisted quotes with TTL; execution binds to the confirmed quote (expired/consumed/mismatched/unconfirmed refused); `Idempotency-Key` retries; injected settlement timeouts surface as `RECONCILIATION_REQUIRED`, never fake success.
-- **B2B layer** — ROI engine + `/roi` calculator (hand-computed tests), product strategy, business-validation kit with an EMPTY (non-invented) results log: [docs/PRODUCT_STRATEGY.md](docs/PRODUCT_STRATEGY.md).
-- **API hardening** — `X-Request-ID` tracing, per-IP rate limiting, optional `X-API-Key`, `/api/ready`, structured quote-binding error codes (verified over live HTTP).
-- **Scenario evaluation A–H** — the product tested like a judge: adaptive re-ranking, expired quotes, compliance holds, provider failures, uncertain settlement, adversarial input, Bengali/Banglish. Report: [docs/evaluation_report.json](docs/evaluation_report.json).
-- **Screening fix** — bare recipient names in free text are now extracted and screened instead of being silently replaced by the demo persona.
-
-## 🧩 Upgrade highlights (Oct 24)
-
-- **Bangla UI** — `EN | বাংলা` toggle on all four screens, persisted; parser handles Bengali numerals, inflections and Banglish.
-- **Config-driven corridors** — `backend/config/corridors/{uae_bd,ksa_bd}.json` hold FX, incentive rate, rails and last-mile fees; a new corridor is a new file, no code changes.
-- **Trained GNN behind a flag** — `backend/ml/train_gnn.py` trains the PyG GCN on a labeled **synthetic** transaction graph (held-out AUC 0.9038 — *prototype evidence of the training pipeline, not evidence of production fraud detection*). Class-specific error analysis in `ml/eval.json` shows the trained model's raw scores never reach the 0.8 production review gate (recall 0.0 at that threshold), and `ml/ablation.md` shows a simple linear rule matches the GCN on the same split — so the deterministic stand-in stays the default; `USE_TRAINED_GNN=true` is opt-in and needs recalibration before any review-triggering use. API shape identical.
-- **Regulatory RAG** — `backend/rag/` grounds decisions with cited passages from Bangladesh Bank/OFAC/ISO 20022 excerpts; exposed as `regulatory_basis` in every quote/execute response.
-
----
-
-## ⚖️ Real vs. Simulated (Hackathon Honesty Table)
-
-| Component | Real | Simulated / Mocked |
-| :--- | :--- | :--- |
-| 2.5% BD Govt incentive math | ✅ real policy, real math | — |
-| Routing & fee/FX comparison | ✅ real engine | corridor rates are demo snapshots |
-| OFAC screening | ✅ fuzzy-matching engine | sample sanctions list (local JSON) |
-| GNN RegTech | ✅ trained PyG GCN shipped (`ml/model.pt`); held-out **synthetic** benchmark AUC 0.9038 with class-error analysis + baseline ablation published — labeled prototype evidence, not production effectiveness (at the 0.8 policy gate the trained model flags nothing: recall 0.0; a linear rule matches its AUC) | stand-in inference is the default; trained model opt-in via `USE_TRAINED_GNN=true` |
-| Stellar execution | ✅ deterministic simulated settlement, clearly labeled (`simulated: true`, `network: "SIMULATED"`) | testnet path payment is NOT implemented — a real demo needs funded issuer/distributor + trustlines (see REAL_VS_SIMULATED.md) |
-| bKash/Nagad payout | — | mock payout registry (`data/recipients.json`) |
-
-Every simulated surface is labeled **Simulated** in the UI (the receipt's chain trail shows `network: SIMULATED`).
-The full claim-by-claim contract — including what a real Stellar testnet demo
-would require — lives in [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md).
-
-## 🧪 One-command verification (judges)
-
-```bash
-make smoke            # fresh venv: imports + end-to-end pipeline gate (<60s)
-make test             # stdlib unit suites: core + financial edge cases + ROI model
-make test-financial   # money math / eligibility / quote-lifecycle edge cases
-make test-roi         # ROI model vs hand-computed values
-make eval-sanctions   # sanctions benchmark: true hits BLOCK, near-misses REVIEW, 0% FPR
-make eval-rag         # regulatory retrieval hit@2 + citation-domain check
-make scenarios        # end-to-end scenarios A–H → docs/evaluation_report.json
-make ablation         # risk-model ablation: rule vs logistic vs boosted vs GCN
-make ci-local         # all of the above, CI-equivalent
+```
+xpay/
+├── backend/                 # FastAPI app, corridor configs, ML, evals, tests
+│   ├── app/agent/           # LangGraph orchestrator (+ sequential fallback)
+│   ├── app/services/        # incentive, routing, compliance, risk, RAG, money, quotes, store, stellar
+│   ├── config/corridors/    # uae_bd.json (pricing as data)
+│   ├── data/                # eval sets, FX snapshot, OFAC sample, recipients
+│   ├── rag/corpus/          # BB / OFAC / ISO 20022 excerpts
+│   ├── ml/                  # train_gnn.py, ablation.py, model.pt, eval.json
+│   └── tests/               # test_core, test_smoke, test_step3, test_step4, financial, roi
+├── frontend/                # Next.js 14 (TS + Tailwind), Bangla toggle, voice, chain trail
+├── docs/                    # architecture, financial model, KPIs, validation, strategy
+├── .github/workflows/ci.yml # fresh-checkout CI
+├── docker-compose.yml
+├── Makefile
+└── REAL_VS_SIMULATED.md     # claim-by-claim truth table
 ```
 
-Scenario results live in [docs/evaluation_report.json](docs/evaluation_report.json)
-(generated by `make scenarios` — machine-readable, timestamped, with data-type labels).
+## Team — CTRL V
 
-Repo integrity: `git ls-files | grep routing_scorer` → committed (the reviewer's
-export tool parsed 41 of 67 files; nothing was missing from the repo itself —
-`git clone` + `make setup && make smoke` passes, and `docker compose up --build`
-runs the full system, verified).
+| Member | Role |
+| :--- | :--- |
+| **Sukonya Dutta Pushpa** (Captain) | AI orchestration and explainer |
+| **Taskif Bin Parves** | Backend and settlement adapter |
+| **Wasik Ahmed** | Routing and incentive engine |
+| **Fahim Ahmed** | Frontend and voice UX |
+| **Alisha Akter** | RegTech, data, and compliance |
 
----
+## Responsible AI, privacy, and limitations
 
-## 👥 Team Roles (5 members)
+- LLM outputs are schema-validated and **cannot override** financial calculations.
+- Compliance holds cannot be bypassed by an AI explanation; held transfers require human review (24-hour SLA) and never settle automatically.
+- The system **does not autonomously authorize real transfers**; quotes are bound to their original calculations and expired or consumed quotes are refused.
+- Uncertain settlement outcomes are reported as `RECONCILIATION_REQUIRED`, never as success.
+- Demo data and the sample sanctions list are clearly identified; the matcher is not a legal screening service and citations are not legal advice.
+- PII stays off-chain; only hashes and non-identifying audit data touch the ledger.
+- Rate limiting and idempotency are per-process in this prototype; production deployment would require shared state, licensed partners, authoritative screening data, and legal/regulatory review.
 
-| Role | Primary responsibility | Deliverable by Oct 30 |
-| :--- | :--- | :--- |
-| **1. AI Orchestrator Lead** | Layer B (LangGraph), intent parsing, tool-calling, explainer | Working orchestrator: voice text → scored tools → explained recommendation |
-| **2. RegTech & Data Lead** | Layer A GNN (PyG), OFAC fuzzy matching, ISO 20022 | Risk endpoint returning score + plain-text explanation |
-| **3. Routing & Incentive Lead** | Routing scorer (incentive eligibility, EV ranking), **2.5% incentive math**, FX logic | `calculate_true_net_receive` comparing SWIFT vs Stellar Hybrid |
-| **4. Frontend & UX Lead** | Voice UI, route comparison dashboard, receipt | Polished Next.js flow labeling the “Govt Incentive Added” line |
-| **5. Backend & Stellar Lead** | FastAPI, DB schema, settlement adapter, deployment | Unified backend + labeled simulated settlement receipt |
+See [docs/responsible-ai.md](docs/responsible-ai.md) and [docs/SECURITY_AND_RESPONSIBLE_AI.md](docs/SECURITY_AND_RESPONSIBLE_AI.md).
 
----
+## Documentation
 
-## ⏱️ Sprint Status
-
-Sprint window: **Oct 20 → Oct 31 (11:59 PM GMT+6 submission)** — full plan in
-[docs/sprint-plan.md](docs/sprint-plan.md). This repository lands the **Days 1–5
-foundation**: monorepo, API contracts, all Layer A engines, the Layer B orchestrator,
-the FastAPI shell, the PostgreSQL schema, and the Next.js flow. Days 6–7
-(integration) are mostly wiring that already exists here end-to-end.
-
-## 🎬 Demo & competition
-
-The rubric-aligned 3-minute video script is in [docs/demo-script.md](docs/demo-script.md).
-Competition mapping against the AI Builders Congress (verified judging criteria, gap
-analysis, advisory review): [docs/competition-analysis.md](docs/competition-analysis.md).
-One-pager: [docs/one-pager.md](docs/one-pager.md) · Submission week plan:
-[docs/submission-plan.md](docs/submission-plan.md) · KPIs: [docs/kpis.md](docs/kpis.md).
-
-**New documentation (Oct 25):** financial calculation contract
-([FINANCIAL_MODEL](docs/FINANCIAL_MODEL.md)) · product strategy & ROI
-([PRODUCT_STRATEGY](docs/PRODUCT_STRATEGY.md)) · customer-discovery kit
-([business-validation](docs/business-validation.md)) · threat model &
-responsible-AI limits ([SECURITY_AND_RESPONSIBLE_AI](docs/SECURITY_AND_RESPONSIBLE_AI.md))
-· what was actually run ([VALIDATION_REPORT](docs/VALIDATION_REPORT.md)).
-
----
-
-### ⚠️ Disclaimer
-
-xPay is a hackathon prototype. Quotes are simulated snapshots, blockchain settlement is
-**simulated by design** (testnet-ready adapter, clearly labeled — never presented as a
-real ledger transaction), and payout rails are mocked. It is not a licensed
-money-services business — yet. PII stays off-chain; only hashes and non-identifying
-audit data touch the ledger. Responsible-AI statement:
-[docs/responsible-ai.md](docs/responsible-ai.md).
+- Architecture and data flow: [docs/architecture.md](docs/architecture.md)
+- Financial calculation rules: [docs/FINANCIAL_MODEL.md](docs/FINANCIAL_MODEL.md)
+- KPIs and measurement: [docs/kpis.md](docs/kpis.md)
+- Validation evidence: [docs/VALIDATION_REPORT.md](docs/VALIDATION_REPORT.md)
+- Real vs simulated: [REAL_VS_SIMULATED.md](REAL_VS_SIMULATED.md)
+- Product strategy and ROI: [docs/PRODUCT_STRATEGY.md](docs/PRODUCT_STRATEGY.md)
+- Business validation: [docs/business-validation.md](docs/business-validation.md)
+- Competition mapping: [docs/competition-analysis.md](docs/competition-analysis.md)
+- Demo script: [docs/demo-script.md](docs/demo-script.md)

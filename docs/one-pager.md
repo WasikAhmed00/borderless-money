@@ -15,14 +15,14 @@ xPay is a **net-receive router**: say or type the transfer in Bangla, English, o
 
 ## 3. System flow
 
-Voice/text → multilingual intent parser → corridor rail scorer (config-driven rails × payout legs, priced end-to-end) → pre-settlement risk (GNN + OFAC fuzzy screening with human review) → execution (simulated settlement, clearly labeled; testnet-ready adapter) → receipt with audit hash and ISO 20022 payload. PII stays off-chain.
+Voice/text → multilingual intent parser → corridor rail scorer (config-driven rails × payout legs, priced end-to-end) → pre-settlement risk (GNN + OFAC fuzzy screening with human review) → execution (simulated settlement adapter, clearly labeled) → receipt with audit hash and ISO 20022 payload. PII stays off-chain. Testnet integration is a future milestone.
 
 ## 4. AI approach
 
 - **Intent parsing:** rule-based multilingual parser (Bengali/Arabic numerals, code-switching, transliterations) — deterministic where money is involved. **Measured: 100% on a 49-utterance curated en/bn/ar benchmark.**
 - **Orchestration:** LangGraph state machine over **deterministic Python tools — the LLM never does arithmetic**, which is how we prevent hallucinated money. (Runs with an identical sequential fallback.)
 - **Routing:** corridor rails priced by the True Net Receive engine; corridors are config files (`uae_bd.json`, `ksa_bd.json`) — a new corridor is a new file, not code.
-- **Risk:** trained 2-layer GCN over transaction subgraphs (held-out **AUC 0.9038 on a labeled synthetic benchmark** — prototype evidence, not production effectiveness; `ml/eval.json` publishes the class-error analysis, and `ml/ablation.md` shows a simple linear rule matches it) + OFAC fuzzy matching (recall 100%, false-hold 0% on our labeled set) with near-matches held for human review (exact list hits are blocked).
+- **Risk:** trained 2-layer GCN over transaction subgraphs (held-out **AUC 0.9038 on a labeled synthetic benchmark** — prototype evidence, not production effectiveness; `../backend/ml/eval.json` publishes the class-error analysis, and `../backend/ml/ablation.md` shows a simple linear rule matches it) + OFAC fuzzy matching (recall 100%, false-hold 0% on our labeled set) with near-matches held for human review (exact list hits are blocked).
 - **RAG:** regulatory corpus (Bangladesh Bank circular excerpts, OFAC FAQ, ISO 20022) grounds every decision with **cited passages** (`regulatory_basis` in the API response).
 - **Personalisation:** corridor defaults, recipient registry, language preference (persisted).
 
@@ -35,21 +35,21 @@ Full **bn UI toggle on all four screens** (persisted), Bangla voice input, and t
 | KPI | Value | Target |
 | :--- | ---: | :--- |
 | Net-receive uplift vs SWIFT | **+3.05%** | ≥ 3.0% |
-| Uplift at 1.5% anchor spread (pessimistic row) | **+2.59%** | headline is a scenario, not a constant — [docs/stellar-sensitivity.md](stellar-sensitivity.md) |
+| Uplift at 1.5% anchor spread (pessimistic row) | **+2.59%** | headline is a scenario, not a constant — [stellar-sensitivity.md](stellar-sensitivity.md) |
 | Intent accuracy (curated en/bn/ar benchmark) | **100%** | ≥ 95% |
-| p95 quote latency (engine) | **~2–3 ms** | ≤ 3 s |
+| p95 quote latency (end-to-end HTTP) | **21.2 ms** | ≤ 3,000 ms |
 | Compliance false-positive hold rate | **0.0%** | ≤ 2.0% |
 | OFAC screening recall | **100%** | 100% |
 | GNN test AUC (synthetic benchmark — prototype evidence, not production effectiveness) | **0.9038** | ceiling ≈0.94; linear-rule baseline matches (0.9185) |
 
 ## 7. Team, NRB, business model & roadmap
 
-Team CTRL V — Taskif Bin Parves, Wasik Ahmed, Fahim Ahmed, Sukonya Dutta Pushpa (Captain), Alisha Akter — covering AI orchestration, RegTech/data, routing/incentive, frontend/UX, and backend/Stellar. NRB advisor: outreach in progress — confirmed by Oct 30 or the claim is omitted from the submission entirely.
+Team CTRL V — Taskif Bin Parves, Wasik Ahmed, Fahim Ahmed, Sukonya Dutta Pushpa (Captain), Alisha Akter — covering AI orchestration, RegTech/data, routing/incentive, frontend/UX, and backend/Stellar. No NRB advisor is claimed at submission; outreach remains in progress and will be disclosed only when confirmed.
 
-**Business model (assumptions sized for the pilot — full model in docs/unit-economics.md):** senders pay a **flat AED 2.00** per transfer (a fifth of incumbent fees); exchange-house/MTO partners pay a **0.15% take rate on principal** for the routing + compliance API (the partner pays it; final incidence is a pilot question); bKash/Nagad pay nothing (they earn last-mile volume). Variable cost ≈ AED 0.16/transfer across infra, FX feed, screening and settlement writes → **95.4% gross margin**. **CAC ≈ AED 8** via employer/exchange-house partnerships (payback ≈ 1.3 months at 2 transfers/month). **10,000 senders in 6 months** at 2 transfers/month ≈ AED 17M monthly volume → **≈ AED 65,500 monthly gross revenue / 62,300 gross margin**. Marginal cost of a new corridor: 2 engineer-weeks + one compliance review (rules are config files — KSA and Malaysia ship as config-only proofs). Our revenue never touches the 2.5% government incentive — it belongs to the beneficiary.
+**Business model (assumptions sized for the pilot — full model in [unit-economics.md](unit-economics.md)):** senders pay a **flat AED 2.00** per transfer (a fifth of incumbent fees); exchange-house/MTO partners pay a **0.15% take rate on principal** for the routing + compliance API (the partner pays it; final incidence is a pilot question); bKash/Nagad pay nothing (they earn last-mile volume). Variable cost ≈ AED 0.16/transfer across infra, FX feed, screening and settlement writes → **95.4% gross margin**. **CAC ≈ AED 8** via employer/exchange-house partnerships (payback ≈ 1.3 months at 2 transfers/month). **10,000 senders in 6 months** at 2 transfers/month ≈ AED 17M monthly volume → **≈ AED 65,500 monthly gross revenue / 62,300 gross margin**. Marginal cost of a new corridor: 2 engineer-weeks + one compliance review (rules are config files — KSA config already shipped as a proof of the pattern). Our revenue never touches the 2.5% government incentive — it belongs to the beneficiary.
 
-Roadmap: pilot with one UAE MTO → three corridors (UAE, KSA, Malaysia → Bangladesh; KSA config already shipped) → B2B Remittance-as-a-Service API for bKash/Nagad partners. 10,000 senders in six months.
+Roadmap: pilot with one UAE MTO → additional corridors (KSA config already shipped as a proof of the pattern) → B2B Remittance-as-a-Service API for bKash/Nagad partners.
 
 ---
 
-*Honesty statement: quotes are simulated snapshots; settlement is simulated by design (clearly labeled, testnet-ready adapter); payout rails are mocked; GNN/regulatory evals are synthetic/curated benchmarks. Production integration replaces each labeled surface one-for-one.*
+*Honesty statement: quotes are simulated snapshots; settlement is simulated by design (clearly labeled); payout rails are mocked; GNN/regulatory evals are synthetic/curated benchmarks. Simulated Stellar settlement adapter is implemented; testnet integration is a future milestone. Production integration replaces each labeled surface one-for-one.*

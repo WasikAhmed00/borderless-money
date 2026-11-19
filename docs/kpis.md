@@ -21,7 +21,7 @@ that external number: **the total effective cost to the family drops by roughly
 a third relative to the global average cost of remitting** — a claim about the
 problem's economics, not about our production pricing.
 
-## Risk-model ablation (honest positioning — `make ablation`, full table in `ml/ablation.md`)
+## Risk-model ablation (honest positioning — `make ablation`, full table in `../backend/ml/ablation.md`)
 
 **Synthetic-benchmark prototype evidence — not evidence of production fraud
 detection.** The generator's fraud/normal ranges mirror the stand-in rule's

@@ -4,7 +4,7 @@ Base URL (dev): `http://localhost:8000` · Interactive docs: `/docs`
 These contracts are the team-wide interface — frontend and B2B RaaS consumers build
 against them.
 
-## Cross-cutting (added Oct 25)
+## Cross-cutting
 
 - **Request tracing:** every response carries `X-Request-ID` (client-supplied
   echoed if sane, else generated).

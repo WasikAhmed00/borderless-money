@@ -25,7 +25,7 @@ Verified against the live event page (cloudcampbd.com/ai-builders-congress, fetc
 | **Business Model + Global Readiness** | 20% | Monetization, adoption pathway, cross-border viability | B2B RaaS API, take-rate hypothesis, **config-driven corridors (uae_bd + ksa_bd prove multi-corridor without code changes)** |
 | **Real-World Impact + Ethical AI Compliance** | 20% | **"Measurable outcomes or KPIs"**, responsible data, bias mitigation, transparency | **`GET /metrics` returns five measured KPIs** (computed from in-repo eval sets); near-matches held for review, exact list hits blocked; PII off-chain; honesty labels |
 | **Scalability + NRB Collaboration** | 10% | Cloud readiness, modular design, **NRB/global collaboration** | Corridor abstraction, containerizable, hosted URL planned; **NRB advisor = the one open gap** |
-| **Presentation** | 10% | Storytelling, demo effectiveness, explaining AI decisions | Reasoning surfaced in product copy; 5-segment video script (docs/demo-script.md) |
+| **Presentation** | 10% | Storytelling, demo effectiveness, explaining AI decisions | Reasoning surfaced in product copy; 5-segment video script (demo-script.md) |
 
 **Reading:** Technical Execution + Impact = 40% of the score, and the rubric literally names RAG, KPIs, and explainability — the four upgrades just added (RAG, `/metrics`, trained GNN, corridor config) are direct rubric coverage, not feature creep. The weakest cells are **Business Model packaging** and **NRB collaboration**.
 
@@ -40,11 +40,11 @@ Verified against the live event page (cloudcampbd.com/ai-builders-congress, fetc
 | Bangla localisation | **Strong** | bn toggle shipped on all four screens, persisted in localStorage; parser handles bn numerals/words |
 | Measurable KPIs | **Strong** | `/metrics` returns measured values; targets in docs/kpis.md |
 | Differentiation | Strong | State it in one sentence, not a formula |
-| Business potential | Weak→Medium | One-pager economics section (docs/one-pager.md); rehearse the take-rate answer |
+| Business potential | Weak→Medium | One-pager economics section (one-pager.md); rehearse the take-rate answer |
 | Global scalability | **Strong** | ksa_bd stub + `/api/health` lists corridors — show it for 3 seconds in the video |
 | Responsible AI | **Strong** | Near-match hold-for-review (exact hits blocked) + audit hash + citations; put it in the video at 1:30–2:00 |
 | **NRB collaborator** | **Open** | Outreach this week; the rubric awards it inside the 10% Scalability criterion |
-| "Mocked GNN" flank | **Closed** | Trained GCN shipped with honest eval (docs/kpis.md); stand-in still the safe default |
+| "Mocked GNN" flank | **Closed** | Trained GCN shipped with honest eval (kpis.md); stand-in still the safe default |
 
 ## Review of the advisory (what we adopted, what we corrected)
 
@@ -58,4 +58,4 @@ Verified against the live event page (cloudcampbd.com/ai-builders-congress, fetc
 5. Config format: advisory said YAML; we used **JSON** so the whole engine + tests stay stdlib-only (schema identical to the suggested one).
 6. "Don't spend the week adding features" — right instinct, but 4 of the 5 suggested upgrades map 1:1 to published criteria; that's submission work. The one we'd have skipped if short on time was GNN training — done anyway with an honest eval.
 7. **Missed by the advisory:** the congress also runs **Zero to Launch** (500 finalists, 1-hour live build, Oct 15–Nov 15 preliminary) — **decision (Oct 24): xPay is NOT entering Zero to Launch.** We have no dedicated sub-team; a live-build format would cannibalize the video, NRB outreach, and recording time in the only week that matters. The team lead records this call so nobody relitigates it on Day 5. Revisit only if the preliminary is submitted early (Oct 29) AND a two-person sub-team volunteers — otherwise closed.
-8. **Business model was the thin 20%** — fixed Oct 24: the one-pager now carries the unit-economics model (flat AED 2 + 0.15% partner take rate, AED 8 CAC, 10K senders → ~AED 65K monthly gross margin, all labeled assumptions); full model in [docs/unit-economics.md](unit-economics.md). The in-person round is a stand-up performance — [docs/pitch-script.md](pitch-script.md) drafts the 3-minute spoken pitch now, rehearsed twice.
+8. **Business model was the thin 20%** — fixed Oct 24: the one-pager now carries the unit-economics model (flat AED 2 + 0.15% partner take rate, AED 8 CAC, 10K senders → ~AED 65K monthly gross margin, all labeled assumptions); full model in [unit-economics.md](unit-economics.md). The in-person round is a stand-up performance — [pitch-script.md](pitch-script.md) drafts the 3-minute spoken pitch now, rehearsed twice.

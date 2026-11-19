@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/assets/xpay-logo.png" alt="xPay Logo" width="200"/>
+  <img src="./frontend/public/assets/xpay-logo.png" alt="xPay Logo" width="200"/>
 </p>
 <h1 align="center">xPay</h1>
 

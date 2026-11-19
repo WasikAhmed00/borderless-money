@@ -3,22 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --ink: #0f172a;
-  --ink-soft: #94a3b8;
-  --navy: #090e17;
-  --navy-2: #111a2e;
-  --navy-card: #0d1527;
-  --line: #1e293b;
-  --line-light: rgba(255, 255, 255, 0.08);
-  --saffron: #f59e0b;
-  --saffron-deep: #d97706;
-  --emerald: #10b981;
-  --emerald-deep: #059669;
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --border: #E7E5E0;
+  --muted: #6B6B66;
+  --ink: #1A1A18;
+  --accent: #D97706;
+  --accent-fg: #FFFFFF;
+  --success: #047857;
+  --warning: #B45309;
+  --danger: #B91C1C;
 }
 
 @layer base {
   * { box-sizing: border-box; }
-  /* Bengali: per-glyph fallback must land on a real Bangla font (F5 font check) */
   html {
     font-family: Inter, "Noto Sans Bengali", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Bengali UI", "Bangla MN", "Vrinda", Arial, sans-serif;
     scroll-behavior: smooth;
@@ -26,78 +24,54 @@
   :lang(bn) { line-height: 1.65; }
   body {
     margin: 0;
-    background-color: #080d16;
-    color: #f1f5f9;
+    background: var(--bg);
+    color: var(--ink);
     font-size: 15px;
     line-height: 1.5;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
   }
   button, input, select { font: inherit; }
   button { cursor: pointer; }
-  ::selection { background: rgba(245, 158, 11, .3); color: #ffffff; }
+  ::selection { background: rgba(217, 119, 6, .2); color: var(--ink); }
+  /* Headings 700 only, UI labels 600, body 400 per anti-slop */
+  h1, h2, h3 { font-weight: 700; color: var(--ink); }
+  a { color: inherit; }
 }
 
 @layer components {
   .xpay-shell {
     min-height: 100vh;
-    background: 
-      radial-gradient(ellipse 90% 50% at 50% -10%, rgba(245, 158, 11, 0.10), transparent 50rem),
-      radial-gradient(ellipse 70% 40% at 85% 15%, rgba(16, 185, 129, 0.08), transparent 40rem),
-      #080d16;
+    background: var(--bg);
   }
   .xpay-card {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    background: rgba(13, 21, 39, 0.75);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-  }
-  .xpay-card-light {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
   }
   .xpay-eyebrow {
-    color: #f59e0b;
+    color: var(--muted);
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .15em;
+    font-weight: 600;
+    letter-spacing: .14em;
     text-transform: uppercase;
   }
   .xpay-mono {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
-  .xpay-glow {
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, .25), 0 10px 25px -5px rgba(245, 158, 11, .3);
-  }
-  .xpay-glow-emerald {
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, .25), 0 10px 25px -5px rgba(16, 185, 129, .3);
-  }
   .xpay-fade-up {
-    animation: fade-up .4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: fade-up 150ms ease both;
   }
-  .xpay-fade-up:nth-child(2) { animation-delay: .06s; }
-  .xpay-fade-up:nth-child(3) { animation-delay: .12s; }
-  .xpay-fade-up:nth-child(4) { animation-delay: .18s; }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 2s infinite ease-in-out;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .xpay-fade-up, .animate-pulse-ring { animation: none; }
+  .xpay-fade-up { animation: none; }
+  * { scroll-behavior: auto !important; }
 }

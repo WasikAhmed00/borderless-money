@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "xPay — Send more home",
   description: "See the exact amount that arrives in Bangladesh before you send.",
-  icons: { icon: "/favicon.ico" },
+  icons: { icon: "/favicon.ico", apple: "/assets/xpay-logo.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

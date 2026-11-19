@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown, Check } from "lucide-react";
 import type { STRINGS } from "@/lib/i18n";
 import type { AgentStateResponse } from "@/lib/types";
 
@@ -9,39 +10,31 @@ type T = (typeof STRINGS)["en"];
 export interface AgentPipelineProps {
   quote?: AgentStateResponse | null;
   busy?: boolean;
-  activeStep?: number;
   t: T;
 }
 
 export default function AgentPipeline({ quote, busy, t }: AgentPipelineProps) {
-  const [showLogs, setShowLogs] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const steps = [
     {
       id: "intent",
-      num: "01",
       title: t.pipeline.intentTitle,
       desc: quote?.parsed_intent
         ? `${quote.parsed_intent.amount} ${quote.parsed_intent.source_currency} → ${quote.parsed_intent.dest_currency} via ${quote.parsed_intent.payout_method || "optimal rail"}`
         : t.pipeline.intentIdle,
       status: busy ? "processing" : quote ? "completed" : "idle",
-      badge: quote?.parsed_intent?.confidence
-        ? `${Math.round(quote.parsed_intent.confidence * 100)}%`
-        : null,
+      badge: quote?.parsed_intent?.confidence ? `${Math.round(quote.parsed_intent.confidence * 100)}%` : null,
     },
     {
       id: "routing",
-      num: "02",
       title: t.pipeline.routingTitle,
-      desc: quote?.routes?.length
-        ? t.pipeline.routingDesc(quote.routes.length)
-        : t.pipeline.routingIdle,
+      desc: quote?.routes?.length ? t.pipeline.routingDesc(quote.routes.length) : t.pipeline.routingIdle,
       status: busy ? "processing" : quote?.routes ? "completed" : "idle",
       badge: quote?.routes?.length ? `${quote.routes.length}` : null,
     },
     {
       id: "incentive",
-      num: "03",
       title: t.pipeline.incentiveTitle,
       desc: t.pipeline.incentiveIdle,
       status: busy ? "processing" : quote ? "completed" : "idle",
@@ -49,113 +42,84 @@ export default function AgentPipeline({ quote, busy, t }: AgentPipelineProps) {
     },
     {
       id: "compliance",
-      num: "04",
       title: t.pipeline.complianceTitle,
       desc: quote?.compliance
-        ? `OFAC: ${quote.compliance.ofac_match_status || "-"} · ${quote.risk?.risk_band || "-"}`
+        ? `OFAC: ${quote.compliance.ofac_match_status || "—"} · ${quote.risk?.risk_band || "—"}`
         : t.pipeline.complianceIdle,
       status: busy ? "processing" : quote?.compliance ? "completed" : "idle",
       badge: quote?.decision === "CLEAR" ? t.pipeline.compliancePassed : quote?.decision ? String(quote.decision) : null,
     },
     {
       id: "quote_binding",
-      num: "05",
       title: t.pipeline.bindingTitle,
-      desc: quote?.quote_id
-        ? t.pipeline.bindingDesc(quote.quote_id.slice(0, 8))
-        : t.pipeline.bindingIdle,
+      desc: quote?.quote_id ? t.pipeline.bindingDesc(quote.quote_id.slice(0, 8)) : t.pipeline.bindingIdle,
       status: busy ? "processing" : quote?.quote_id ? "completed" : "idle",
       badge: quote?.quote_id ? t.pipeline.bindingBadge : null,
     },
   ];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0d1627]/80 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between pb-4 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-3 w-3">
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${busy ? "bg-amber-400 animate-ping" : "bg-emerald-400"}`} />
-            <span className={`relative inline-flex h-3 w-3 rounded-full ${busy ? "bg-amber-500" : "bg-emerald-500"}`} />
+    <div className="rounded-xl border border-[#E7E5E0] bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        aria-expanded={open}
+      >
+        <span className="text-sm font-semibold text-[#1A1A18]">{t.howDecisionMade}</span>
+        <span className="flex items-center gap-2">
+          <span className="rounded-full border border-[#E7E5E0] bg-[#FAFAF8] px-2 py-0.5 text-xs font-medium text-[#6B6B66]">
+            {busy ? t.pipeline.evaluating : quote ? t.pipeline.ready : t.pipeline.standby}
           </span>
-          <h3 className="text-sm font-bold text-white tracking-wide">
-            {t.pipeline.title}
-          </h3>
-        </div>
-        <span className="text-xs px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-slate-300 font-mono">
-          {busy ? t.pipeline.evaluating : quote ? t.pipeline.ready : t.pipeline.standby}
+          <ChevronDown size={16} strokeWidth={1.75} className={`text-[#6B6B66] transition ${open ? "rotate-180" : ""}`} />
         </span>
-      </div>
+      </button>
 
-      <div className="mt-4 space-y-3">
-        {steps.map((step) => {
-          const isDone = step.status === "completed";
-          const isBusy = step.status === "processing";
-
-          return (
-            <div
-              key={step.id}
-              className={`flex items-start gap-3.5 p-3 rounded-xl border transition-all ${
-                isDone
-                  ? "border-emerald-500/20 bg-emerald-500/[0.04]"
-                  : isBusy
-                  ? "border-amber-500/30 bg-amber-500/[0.05]"
-                  : "border-white/5 bg-white/[0.02] opacity-75"
-              }`}
-            >
+      {open && (
+        <div className="border-t border-[#E7E5E0] px-4 py-4 space-y-3">
+          {steps.map((step) => {
+            const isDone = step.status === "completed";
+            return (
               <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-mono font-bold ${
-                  isDone
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : isBusy
-                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse"
-                    : "bg-white/5 text-slate-400 border border-white/10"
+                key={step.id}
+                className={`flex items-start gap-3 rounded-xl border p-3 ${
+                  isDone ? "border-[#E7E5E0] bg-[#FAFAF8]" : "border-[#E7E5E0] bg-white"
                 }`}
               >
-                {isDone ? "✓" : step.num}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-white">{step.title}</p>
-                  {step.badge && (
-                    <span
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        isDone
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-white/10 text-slate-300"
-                      }`}
-                    >
-                      {step.badge}
-                    </span>
-                  )}
+                <div
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                    isDone ? "border-[#1A1A18] bg-[#1A1A18] text-white" : "border-[#E7E5E0] bg-white text-[#6B6B66]"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {isDone ? <Check size={12} strokeWidth={1.75} /> : <span className="h-1.5 w-1.5 rounded-full bg-[#6B6B66]" />}
                 </div>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">
-                  {step.desc}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {quote?.explanation_log && quote.explanation_log.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-white/10">
-          <button
-            type="button"
-            onClick={() => setShowLogs(!showLogs)}
-            className="flex items-center justify-between w-full text-xs font-semibold text-amber-400 hover:text-amber-300 transition"
-          >
-            <span>{t.pipeline.logsLabel(quote.explanation_log.length)}</span>
-            <span>{showLogs ? `▲ ${t.pipeline.hide}` : `▼ ${t.pipeline.show}`}</span>
-          </button>
-          {showLogs && (
-            <div className="mt-2.5 p-3 rounded-xl bg-black/40 border border-white/10 max-h-48 overflow-y-auto space-y-1.5 font-mono text-[11px] text-slate-300">
-              {quote.explanation_log.map((log, i) => (
-                <div key={i} className="flex gap-2 leading-relaxed">
-                  <span className="text-amber-500 shrink-0">›</span>
-                  <span>{log}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-[#1A1A18]">{step.title}</p>
+                    {step.badge && (
+                      <span className="rounded-full border border-[#E7E5E0] bg-[#FAFAF8] px-2 py-0.5 text-xs font-medium text-[#6B6B66]">
+                        {step.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-[#6B6B66]">{step.desc}</p>
                 </div>
-              ))}
+              </div>
+            );
+          })}
+
+          {quote?.explanation_log && quote.explanation_log.length > 0 && (
+            <div className="rounded-xl border border-[#E7E5E0] bg-[#FAFAF8] p-3">
+              <p className="text-xs font-semibold text-[#1A1A18] mb-2">{t.pipeline.logsLabel(quote.explanation_log.length)}</p>
+              <div className="max-h-48 overflow-y-auto space-y-1.5 font-mono text-xs text-[#1A1A18] leading-relaxed">
+                {quote.explanation_log.map((log, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span className="text-[#6B6B66] shrink-0">›</span>
+                    <span>{log}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

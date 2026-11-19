@@ -1,31 +1,23 @@
 "use client";
 
-/**
- * B2B ROI Calculator — for remittance operators evaluating the xPay
- * routing API. Pure client-side; mirrors backend/app/services/roi.py
- * (which has hand-computed test coverage). Every output is a MODELED ESTIMATE
- * from the user's assumptions — nothing here is measured. Recipient benefit is
- * shown separately and is NEVER counted as vendor revenue.
- *
- * Merged layout: redesign dark styling + main's i18n (en/bn) strings.
- */
 import { useEffect, useMemo, useState } from "react";
 import { STRINGS, applyDocLang, savedLang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 
 type ScenarioKey = "conservative" | "base" | "optimistic";
 
 interface Inputs {
   monthlyTransfers: number;
   avgPrincipal: number;
-  baselinePct: number; // customer's current all-in cost, % of principal
-  proposedPct: number; // all-in cost via recommended routes, % of principal
-  eligibilityShare: number; // fraction of transfers where a recommended route is eligible
-  adoptionRate: number; // fraction of eligible transfers actually routed via API
+  baselinePct: number;
+  proposedPct: number;
+  eligibilityShare: number;
+  adoptionRate: number;
   apiPricePerTx: number;
   apiMonthlyFee: number;
-  bearingShare: number; // share of the all-in cost the operator itself bears
-  customerMonthlyCosts: number; // operator's integration/ops cost per month
-  vendorVariableCostPerTx: number | null; // vendor's infra cost per tx (for margin)
+  bearingShare: number;
+  customerMonthlyCosts: number;
+  vendorVariableCostPerTx: number | null;
 }
 
 const DEFAULTS: Inputs = {
@@ -95,13 +87,13 @@ function Field(props: { label: string; hint: string; value: number; onChange: (v
   return (
     <label className="block">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-slate-300">{props.label}</span>
-        <span className="text-[10px] text-slate-500 font-mono">{props.hint}</span>
+        <span className="text-xs font-semibold text-[#1A1A18]">{props.label}</span>
+        <span className="text-xs text-[#6B6B66] font-mono">{props.hint}</span>
       </div>
       <div className="relative flex items-center">
         <input
           type="number"
-          className="w-full rounded-xl border border-white/10 bg-[#070b13] px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none"
+          className="w-full rounded-xl border border-[#E7E5E0] bg-white px-3 py-2 pr-12 text-sm text-[#1A1A18] focus:border-[#1A1A18] focus:outline-none"
           value={props.value}
           step={props.step ?? 1}
           min={props.min ?? 0}
@@ -109,147 +101,174 @@ function Field(props: { label: string; hint: string; value: number; onChange: (v
           onChange={(e) => props.onChange(Number(e.target.value))}
         />
         {props.suffix && (
-          <span className="absolute right-3 text-xs text-slate-500 font-mono pointer-events-none">
-            {props.suffix}
-          </span>
+          <span className="absolute right-3 text-xs text-[#6B6B66] font-mono pointer-events-none">{props.suffix}</span>
         )}
       </div>
     </label>
   );
 }
 
+function LangToggle({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+  return (
+    <div className="flex rounded-xl border border-[#E7E5E0] bg-[#FAFAF8] p-1 text-xs font-semibold">
+      <button type="button" onClick={() => onLang("en")} className={`rounded-lg px-2.5 py-1 transition ${lang === "en" ? "bg-[#1A1A18] text-white" : "text-[#6B6B66] hover:text-[#1A1A18]"}`}>EN</button>
+      <button type="button" onClick={() => onLang("bn")} className={`rounded-lg px-2.5 py-1 transition ${lang === "bn" ? "bg-[#1A1A18] text-white" : "text-[#6B6B66] hover:text-[#1A1A18]"}`}>বাং</button>
+    </div>
+  );
+}
+
+function RoiTopBar({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+  const t = STRINGS[lang];
+  return (
+    <header className="sticky top-0 z-30 border-b border-[#E7E5E0] bg-white">
+      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-5 py-3 sm:px-8">
+        <div className="flex items-center gap-6">
+          <a href="/" className="flex items-center gap-2.5">
+            <img src="/assets/xpay-logo.png" alt="xPay" width={28} height={28} className="h-7 w-7 rounded-md object-contain" />
+            <span className="text-sm font-bold tracking-tight text-[#1A1A18]">x<span className="text-[#D97706]">Pay</span></span>
+          </a>
+          <nav className="hidden sm:flex items-center gap-1 text-sm">
+            <a href="/" className="rounded-lg px-3 py-1.5 font-semibold text-[#6B6B66] hover:text-[#1A1A18]">{t.navSend}</a>
+            <a href="/roi" className="rounded-lg bg-[#1A1A18] px-3 py-1.5 font-semibold text-white">{t.navRoi}</a>
+          </nav>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-[#E7E5E0] bg-[#FAFAF8] px-3 py-1 text-xs font-medium text-[#6B6B66]">{t.topbarCorridor}</span>
+          <LangToggle lang={lang} onLang={onLang} />
+        </div>
+      </div>
+      <div className="sm:hidden border-t border-[#E7E5E0] flex">
+        <a href="/" className="flex-1 py-2 text-center text-sm font-semibold text-[#6B6B66]">{t.navSend}</a>
+        <a href="/roi" className="flex-1 py-2 text-center text-sm font-semibold border-l border-[#E7E5E0] bg-[#FAFAF8] text-[#1A1A18]">{t.navRoi}</a>
+      </div>
+    </header>
+  );
+}
+
 export default function RoiPage() {
-  const [lang, setLang] = useState<"en" | "bn">("en");
+  const [lang, setLang] = useState<Lang>("en");
   const [i, setI] = useState<Inputs>(DEFAULTS);
   const [active, setActive] = useState<ScenarioKey>("base");
   const r = useMemo(() => compute(i, active), [i, active]);
   const set = (k: keyof Inputs) => (v: number) => setI((p) => ({ ...p, [k]: v }));
   const t = STRINGS[lang];
   useEffect(() => { const l = savedLang(); setLang(l); applyDocLang(l); }, []);
+  const switchLang = (l: Lang) => { setLang(l); window.localStorage.setItem("xpay-lang", l); applyDocLang(l); };
   const breakevenNoteText =
     r.breakevenNote === "none" ? t.roi.breakevenNone
     : r.breakevenNote === "negative" ? t.roi.breakevenNegative
     : t.roi.breakevenPayoff;
 
   return (
-    <div className="xpay-shell min-h-screen text-slate-100">
-      <header className="border-b border-white/10 bg-[#080d16]/80 backdrop-blur-md px-5 py-4 sm:px-8 lg:px-12 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/" className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-black text-lg">
-            ↗
-          </a>
-          <span className="text-sm font-bold text-white">{t.roi.suiteTitle}</span>
-        </div>
+    <div className="xpay-shell min-h-screen flex flex-col">
+      <RoiTopBar lang={lang} onLang={switchLang} />
 
-        <a
-          href="/"
-          className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10 transition"
-        >
-          {t.roi.backToDemo}
-        </a>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300 mb-3">
-            {t.roi.badge}
+      <main className="flex-1 mx-auto max-w-6xl w-full px-5 py-8 sm:px-8">
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#E7E5E0] bg-white px-3 py-1 text-xs font-medium text-[#6B6B66] mb-3">
+            {t.roiHonestyBadge}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white">{t.roi.title}</h1>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
-            {t.roi.lead}
-            {" "}{t.roi.formulasPrefix} <code className="rounded bg-white/10 px-1 font-mono text-xs">backend/app/services/roi.py</code> {t.roi.formulasSuffix}
+          <h1 className="text-3xl font-bold tracking-tight text-[#1A1A18]">{t.roi.title}</h1>
+          <p className="mt-2 text-sm text-[#6B6B66] max-w-2xl leading-relaxed">
+            {t.roi.lead} {t.roi.formulasPrefix} <code className="rounded bg-[#FAFAF8] border border-[#E7E5E0] px-1 font-mono text-xs">backend/app/services/roi.py</code> {t.roi.formulasSuffix}
           </p>
         </div>
 
-        {/* Scenario Toggle */}
-        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-[#0d1627]/80 p-2">
-          <span className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-            {t.roi.adoptionScenario}:
-          </span>
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-[#E7E5E0] bg-white p-2">
+          <span className="px-3 text-xs font-semibold text-[#1A1A18]">{t.roi.adoptionScenario}:</span>
           {(Object.keys(SCENARIOS) as ScenarioKey[]).map((k) => (
             <button
               key={k}
               onClick={() => setActive(k)}
-              className={`rounded-xl px-4 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
-                active === k
-                  ? "bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition ${active === k ? "bg-[#1A1A18] text-white" : "text-[#6B6B66] hover:text-[#1A1A18] border border-transparent hover:border-[#E7E5E0]"}`}
             >
               {t.roi.scenarios[k]}
             </button>
           ))}
-          <span className="text-xs text-slate-500 ml-auto pr-3 hidden md:inline">
-            {t.roi.scenarioNote(SCENARIOS[active].adoptMult, SCENARIOS[active].eligMult)}
-          </span>
+          <span className="text-xs text-[#6B6B66] ml-auto pr-3 hidden md:inline">{t.roi.scenarioNote(SCENARIOS[active].adoptMult, SCENARIOS[active].eligMult)}</span>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Inputs Section */}
+        <div className="grid gap-6 md:grid-cols-2">
           <section className="xpay-card p-6">
-            <div className="border-b border-white/10 pb-3 mb-5">
-              <h2 className="text-base font-bold text-white">{t.roi.yourAssumptions}</h2>
-              <p className="text-xs text-slate-400">{t.roi.assumptionsNote}</p>
-            </div>
+            <h2 className="text-sm font-semibold text-[#1A1A18]">{t.roi.yourAssumptions}</h2>
+            <p className="text-xs text-[#6B6B66] mb-5">{t.roi.assumptionsNote}</p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label={t.roi.fields.monthlyTransfers.label} hint={t.roi.fields.monthlyTransfers.hint} value={i.monthlyTransfers} onChange={set("monthlyTransfers")} min={1} />
-              <Field label={t.roi.fields.avgPrincipal.label} hint={t.roi.fields.avgPrincipal.hint} value={i.avgPrincipal} onChange={set("avgPrincipal")} step={50} suffix="AED" />
-              <Field label={t.roi.fields.baselineCost.label} hint={t.roi.fields.baselineCost.hint} value={i.baselinePct} onChange={set("baselinePct")} step={0.1} suffix="%" />
-              <Field label={t.roi.fields.proposedCost.label} hint={t.roi.fields.proposedCost.hint} value={i.proposedPct} onChange={set("proposedPct")} step={0.1} suffix="%" />
-              <Field label={t.roi.fields.eligibilityShare.label} hint={t.roi.fields.eligibilityShare.hint} value={i.eligibilityShare} onChange={set("eligibilityShare")} step={0.05} max={1} />
-              <Field label={t.roi.fields.adoptionRate.label} hint={t.roi.fields.adoptionRate.hint} value={i.adoptionRate} onChange={set("adoptionRate")} step={0.05} max={1} />
-              <Field label={t.roi.fields.apiPrice.label} hint={t.roi.fields.apiPrice.hint} value={i.apiPricePerTx} onChange={set("apiPricePerTx")} step={0.1} suffix="AED" />
-              <Field label={t.roi.fields.apiMonthlyFee.label} hint={t.roi.fields.apiMonthlyFee.hint} value={i.apiMonthlyFee} onChange={set("apiMonthlyFee")} step={50} suffix="AED" />
-              <Field label={t.roi.fields.bearingShare.label} hint={t.roi.fields.bearingShare.hint} value={i.bearingShare} onChange={set("bearingShare")} step={0.1} max={1} />
-              <Field label={t.roi.fields.monthlyCosts.label} hint={t.roi.fields.monthlyCosts.hint} value={i.customerMonthlyCosts} onChange={set("customerMonthlyCosts")} step={50} suffix="AED" />
-              <Field label={t.roi.fields.vendorCost.label} hint={t.roi.fields.vendorCost.hint} value={i.vendorVariableCostPerTx ?? 0} onChange={(v) => setI((p) => ({ ...p, vendorVariableCostPerTx: v }))} step={0.05} suffix="AED" />
+            <div className="space-y-6">
+              <fieldset className="rounded-xl border border-[#E7E5E0] p-4">
+                <legend className="px-2 xpay-eyebrow">{t.roiVolume}</legend>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label={t.roi.fields.monthlyTransfers.label} hint={t.roi.fields.monthlyTransfers.hint} value={i.monthlyTransfers} onChange={set("monthlyTransfers")} min={1} />
+                  <Field label={t.roi.fields.avgPrincipal.label} hint={t.roi.fields.avgPrincipal.hint} value={i.avgPrincipal} onChange={set("avgPrincipal")} step={50} suffix="AED" />
+                </div>
+              </fieldset>
+
+              <fieldset className="rounded-xl border border-[#E7E5E0] p-4">
+                <legend className="px-2 xpay-eyebrow">{t.roiPricing}</legend>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label={t.roi.fields.baselineCost.label} hint={t.roi.fields.baselineCost.hint} value={i.baselinePct} onChange={set("baselinePct")} step={0.1} suffix="%" />
+                  <Field label={t.roi.fields.proposedCost.label} hint={t.roi.fields.proposedCost.hint} value={i.proposedPct} onChange={set("proposedPct")} step={0.1} suffix="%" />
+                  <Field label={t.roi.fields.apiPrice.label} hint={t.roi.fields.apiPrice.hint} value={i.apiPricePerTx} onChange={set("apiPricePerTx")} step={0.1} suffix="AED" />
+                  <Field label={t.roi.fields.apiMonthlyFee.label} hint={t.roi.fields.apiMonthlyFee.hint} value={i.apiMonthlyFee} onChange={set("apiMonthlyFee")} step={50} suffix="AED" />
+                </div>
+              </fieldset>
+
+              <fieldset className="rounded-xl border border-[#E7E5E0] p-4">
+                <legend className="px-2 xpay-eyebrow">{t.roiAssumptions}</legend>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label={t.roi.fields.eligibilityShare.label} hint={t.roi.fields.eligibilityShare.hint} value={i.eligibilityShare} onChange={set("eligibilityShare")} step={0.05} max={1} />
+                  <Field label={t.roi.fields.adoptionRate.label} hint={t.roi.fields.adoptionRate.hint} value={i.adoptionRate} onChange={set("adoptionRate")} step={0.05} max={1} />
+                  <Field label={t.roi.fields.bearingShare.label} hint={t.roi.fields.bearingShare.hint} value={i.bearingShare} onChange={set("bearingShare")} step={0.1} max={1} />
+                  <Field label={t.roi.fields.monthlyCosts.label} hint={t.roi.fields.monthlyCosts.hint} value={i.customerMonthlyCosts} onChange={set("customerMonthlyCosts")} step={50} suffix="AED" />
+                  <Field label={t.roi.fields.vendorCost.label} hint={t.roi.fields.vendorCost.hint} value={i.vendorVariableCostPerTx ?? 0} onChange={(v) => setI((p) => ({ ...p, vendorVariableCostPerTx: v }))} step={0.05} suffix="AED" />
+                </div>
+              </fieldset>
             </div>
           </section>
 
-          {/* Outcomes Section */}
-          <section className="xpay-card p-6 flex flex-col justify-between">
-            <div>
-              <div className="border-b border-white/10 pb-3 mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-white">{t.roi.outcomeTitle(t.roi.scenarios[active])}</h2>
-                  <p className="text-xs text-slate-400">{t.roi.outcomeNote}</p>
-                </div>
-                {r.marginPct != null && (
-                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-mono font-bold text-emerald-400">
-                    {t.roi.marginBadge(r.marginPct)}
-                  </span>
-                )}
+          <section className="xpay-card p-6 flex flex-col">
+            <div className="pb-3 mb-4 flex items-center justify-between border-b border-[#E7E5E0]">
+              <div>
+                <h2 className="text-sm font-semibold text-[#1A1A18]">{t.roi.outcomeTitle(t.roi.scenarios[active])}</h2>
+                <p className="text-xs text-[#6B6B66]">{t.roi.outcomeNote}</p>
               </div>
-
-              <dl className="space-y-3 text-xs">
-                {[
-                  [t.roi.rows.eligibleTransfers, fmt(r.eligible, "")],
-                  [t.roi.rows.adoptedTransfers, fmt(r.adopted, "")],
-                  [t.roi.rows.principalRouted, fmt(r.principalMoved)],
-                  [t.roi.rows.recipientBenefit, fmt(r.recipientBenefit)],
-                  [t.roi.rows.costSavings, fmt(r.customerSavings)],
-                  [t.roi.rows.apiRevenue, fmt(r.apiRevenue)],
-                  [t.roi.rows.netBenefit, fmt(r.customerNet)],
-                  [t.roi.rows.costPerTx, fmt(r.costPerTx)],
-                  [t.roi.rows.vendorMargin, r.marginPct == null ? "—" : `${r.marginPct}%`],
-                  [t.roi.rows.breakevenVolume, r.breakeven == null ? "—" : t.roi.transfersPerMonth(r.breakeven)],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between gap-4 border-b border-dashed border-white/10 pb-2">
-                    <dt className="text-slate-400">{k}</dt>
-                    <dd className="font-mono font-bold text-white">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-3 text-[11px] text-slate-400 italic">{breakevenNoteText}.</p>
+              {r.marginPct != null && (
+                <span className="rounded-full border border-[#E7E5E0] bg-[#FAFAF8] px-3 py-1 text-xs font-mono font-semibold text-[#1A1A18]">
+                  {t.roi.marginBadge(r.marginPct)}
+                </span>
+              )}
             </div>
 
-            <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3.5 text-xs text-amber-200/90 leading-relaxed">
-              <strong className="text-amber-300 font-semibold">{t.roi.honestyTitle}</strong> {t.roi.honestyBody}
+            <dl className="space-y-0 text-sm">
+              {[
+                [t.roi.rows.eligibleTransfers, fmt(r.eligible, ""), false],
+                [t.roi.rows.adoptedTransfers, fmt(r.adopted, ""), false],
+                [t.roi.rows.principalRouted, fmt(r.principalMoved), false],
+                [t.roi.rows.recipientBenefit, fmt(r.recipientBenefit), false],
+                [t.roi.rows.costSavings, fmt(r.customerSavings), false],
+                [t.roi.rows.apiRevenue, fmt(r.apiRevenue), false],
+                [t.roi.rows.netBenefit, fmt(r.customerNet), true],
+                [t.roi.rows.costPerTx, fmt(r.costPerTx), false],
+                [t.roi.rows.vendorMargin, r.marginPct == null ? "—" : `${r.marginPct}%`, false],
+                [t.roi.rows.breakevenVolume, r.breakeven == null ? "—" : t.roi.transfersPerMonth(r.breakeven), true],
+              ].map(([k, v, highlight]) => (
+                <div key={k as string} className={`flex items-center justify-between gap-4 border-b border-[#E7E5E0] px-3 py-2.5 ${highlight ? "bg-[#FAFAF8] rounded-lg border" : "border-dashed"}`}>
+                  <dt className="text-[#6B6B66] text-xs">{k as string}</dt>
+                  <dd className="font-mono font-semibold text-[#1A1A18] text-right">{v as string}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-xs text-[#6B6B66]">{breakevenNoteText}.</p>
+
+            <div className="mt-6 rounded-xl border border-[#E7E5E0] bg-[#FAFAF8] p-3.5 text-xs leading-relaxed text-[#1A1A18]">
+              <strong className="font-semibold">{t.roi.honestyTitle}</strong> {t.roi.honestyBody}
             </div>
           </section>
         </div>
       </main>
+
+      <footer className="border-t border-[#E7E5E0] bg-white px-5 py-4 text-center text-xs text-[#6B6B66] sm:px-8">
+        {t.honestyFooter}
+      </footer>
     </div>
   );
 }

@@ -10,7 +10,8 @@ passlib[bcrypt]>=1.7
 python-multipart>=0.0.9
 bcrypt==4.0.1
 
-# Async DB (also needed in lite for auth — users now in Postgres)
+# Async DB (also needed in lite for auth — users now in Postgres, SQLite fallback for local dev)
 sqlalchemy[asyncio]>=2.0
 asyncpg>=0.29
 pydantic-settings>=2.1
+aiosqlite>=0.20

@@ -25,9 +25,10 @@ bcrypt==4.0.1
 # MCP — Model Context Protocol (separate streamable-HTTP server on :8001)
 mcp[cli]>=1.9
 
-# Async PostgreSQL (production DB — replaces users.json)
+# Async PostgreSQL (production DB — replaces users.json) + SQLite fallback for local dev
 sqlalchemy[asyncio]>=2.0
 asyncpg>=0.29
 alembic>=1.13
 psycopg2-binary>=2.9
 pydantic-settings>=2.1
+aiosqlite>=0.20

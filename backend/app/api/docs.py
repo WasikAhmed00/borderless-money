@@ -140,34 +140,47 @@ async def get_live_data(db: AsyncSession = Depends(get_db)):
     except Exception:
         total_quotes = 0
 
-    # MCP status — probe http://localhost:8001/mcp via lightweight async HTTP (httpx, 1s timeout)
-    # Task requires httpx with short timeout; mcp-server is at 8001 via Streamable HTTP
+    # MCP status — probe via GET {MCP_SERVER_URL}/health (httpx, 1s timeout)
+    # Fix: Use MCP_SERVER_URL env var (Docker: http://mcp-server:8001, local: http://localhost:8001)
+    # and hit the dedicated /health route (not /mcp POST) for a reliable 200 OK.
+    import os
+
     mcp_status = "Inactive (Offline)"
-    mcp_urls = ["http://localhost:8001/mcp", "http://mcp-server:8001/mcp"]
+    mcp_base = os.environ.get("MCP_SERVER_URL", "http://localhost:8001")
+    # Ensure no trailing slash, then append /health
+    mcp_health_url = mcp_base.rstrip("/") + "/health"
+    # Also try the alternate host for Docker vs local
+    mcp_urls = [mcp_health_url]
+    # Add fallback for the other network (if mcp_base is localhost, also try mcp-server; vice versa)
+    if "localhost" in mcp_base:
+        mcp_urls.append(mcp_base.replace("localhost", "mcp-server").rstrip("/") + "/health")
+    elif "mcp-server" in mcp_base:
+        mcp_urls.append(mcp_base.replace("mcp-server", "localhost").rstrip("/") + "/health")
+
     try:
         import httpx  # type: ignore
 
         for url in mcp_urls:
             try:
                 async with httpx.AsyncClient(timeout=1.0) as client:
-                    # MCP Streamable HTTP expects POST with JSON-RPC, but a GET/POST probe
-                    # that gets any HTTP response (even 405) proves the server is listening.
-                    # Use POST with minimal JSON-RPC to be more accurate.
-                    resp = await client.post(url, json={"jsonrpc": "2.0", "id": 1, "method": "ping"}, headers={"Accept": "application/json, text/event-stream"})
-                    # Any response (200, 400, 405) means Active; connection failure means Offline
-                    if resp.status_code in (200, 400, 405, 406, 404):
-                        mcp_status = "Active"
-                        break
-                    # Also try GET as fallback
                     resp = await client.get(url)
-                    if resp.status_code in (200, 400, 405, 406, 404):
+                    if resp.status_code == 200:
+                        # Verify JSON is {"status":"ok"} if possible, but any 200 with ok is Active
+                        try:
+                            data = resp.json()
+                            if data.get("status") == "ok":
+                                mcp_status = "Active"
+                                break
+                        except Exception:
+                            # Non-JSON 200 still counts as Active (server is up)
+                            mcp_status = "Active"
+                            break
                         mcp_status = "Active"
                         break
             except Exception:
                 continue
-        # If httpx not available or all probes failed, mcp_status stays Inactive (Offline)
     except ImportError:
-        # Fallback to urllib if httpx not installed (should not happen if requirements include httpx)
+        # Fallback to urllib if httpx not installed
         import urllib.request
         import urllib.error
 
@@ -177,9 +190,12 @@ async def get_live_data(db: AsyncSession = Depends(get_db)):
                     mcp_status = "Active"
                     break
             except urllib.error.HTTPError as e:
-                if e.code in (400, 405, 406, 404):
-                    mcp_status = "Active"
-                    break
+                if e.code in (200, 400, 405, 406, 404):
+                    # For /health, we expect 200, but other codes still indicate server is listening
+                    # For /health specifically, only 200 is truly Active, but we treat 200 as Active
+                    if e.code == 200:
+                        mcp_status = "Active"
+                        break
                 continue
             except Exception:
                 continue

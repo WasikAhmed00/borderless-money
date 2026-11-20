@@ -568,7 +568,11 @@ export default function DocsPage() {
                 <p className="mt-1 text-2xl font-bold text-[#0C2340]">{liveData ? liveData.total_quotes : "—"}</p>
                 <p className="text-xs text-[#64748B] mt-1">In-memory quotes (deterministic)</p>
               </div>
-              <div className="rounded-xl border p-4" style={{ background: liveData?.mcp_status === "Active" ? "#E7F6EE" : "#FDECEA", borderColor: liveData?.mcp_status === "Active" ? "#06764720" : "#B4231820" }}>
+              <div
+                className="rounded-xl border p-4 group relative"
+                style={{ background: liveData?.mcp_status === "Active" ? "#E7F6EE" : "#FDECEA", borderColor: liveData?.mcp_status === "Active" ? "#06764720" : "#B4231820" }}
+                title={liveData?.mcp_status !== "Active" ? "MCP Server is offline. The backend is gracefully falling back to direct deterministic service calls." : "MCP Server is active — live financial intelligence via Streamable HTTP"}
+              >
                 <p className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: liveData?.mcp_status === "Active" ? "#067647" : "#B42318" }}>
                   <span className={`h-2 w-2 rounded-full ${liveData?.mcp_status === "Active" ? "bg-[#067647] animate-pulse" : "bg-[#B42318] animate-pulse"}`} />
                   MCP Status
@@ -579,6 +583,11 @@ export default function DocsPage() {
                 <p className="text-xs mt-1" style={{ color: liveData?.mcp_status === "Active" ? "#067647" : "#B42318" }}>
                   {liveData?.mcp_server || "xpay-financial-intelligence-mcp"} · {liveData?.transport || "Streamable HTTP"}
                 </p>
+                {liveData?.mcp_status !== "Active" && liveData?.mcp_status?.includes("Inactive") && (
+                  <p className="mt-2 hidden group-hover:block text-[11px] leading-relaxed bg-white border border-[#B42318]/20 rounded-lg px-2.5 py-1.5 text-[#B42318]">
+                    MCP Server is offline. The backend is gracefully falling back to direct deterministic service calls.
+                  </p>
+                )}
               </div>
             </div>
           </section>

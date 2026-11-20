@@ -27,6 +27,8 @@ except ModuleNotFoundError:
             "(or see https://py.sdk.modelcontextprotocol.io/v2/migration/)"
         ) from e
 
+from starlette.responses import JSONResponse
+
 from app.services import corridor as corridor_cfg
 from app.services import compliance, regulatory_rag, routing_scorer
 from app.services.incentive import calculate_true_net_receive
@@ -44,6 +46,20 @@ try:
 except TypeError:
     # MCPServer (2.x) may not accept host/port/stateless_http in __init__
     mcp = FastMCP("xpay-financial-intelligence-mcp")  # type: ignore[call-arg]
+
+
+# Health check for Docker and backend probe (Fix 1 — MCP must expose GET /health)
+# FastMCP with Starlette supports custom_route; fallback to no-op if not available
+try:
+
+    @mcp.custom_route("/health", methods=["GET"])  # type: ignore[attr-defined]
+    async def health_check(request):  # type: ignore[no-untyped-def]
+        return JSONResponse({"status": "ok", "service": "xpay-mcp"})
+
+except Exception:  # pragma: no cover
+    # If custom_route not available (older mcp), the MCP server will still
+    # respond to /mcp POST but not to GET /health — backend probe will fallback
+    pass
 
 
 @mcp.tool()

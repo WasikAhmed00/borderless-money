@@ -15,6 +15,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xpay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/xpay
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +41,14 @@ jobs:
       - name: Install full requirements
         working-directory: backend
         run: pip install -r requirements-full.txt
+
+      - name: Run migrations
+        working-directory: backend
+        run: alembic upgrade head
+
+      - name: Seed users from JSON
+        working-directory: backend
+        run: python scripts/migrate_json_to_db.py
 
       - name: Smoke gate (imports + end-to-end pipeline)
         run: python backend/tests/test_smoke.py
@@ -60,14 +84,31 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xpay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Build full-system backend image
         run: docker build -t xpay-backend -f backend/Dockerfile backend
 
-      - name: Run image smoke test
+      - name: Run image smoke test (with DB)
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/xpay
         run: |
-          docker run -d --name xpay -p 8000:8000 xpay-backend
+          # Start backend with DB URL pointing to service postgres via host network
+          docker run -d --name xpay --network host -e DATABASE_URL=$DATABASE_URL -e PYTHONUNBUFFERED=1 xpay-backend sh -c "alembic upgrade head && python scripts/migrate_json_to_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8000/api/health > /dev/null; then break; fi
             sleep 2
@@ -75,5 +116,5 @@ jobs:
           curl -sf http://localhost:8000/api/health
           # Authenticated smoke test — /api/routes/compare now requires JWT (RBAC)
           TOKEN=$(curl -sf -X POST http://localhost:8000/token -H "Content-Type: application/x-www-form-urlencoded" -d "username=user@xpay.com&password=UserPass123!" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))")
-          if [ -z "$TOKEN" ]; then echo "Failed to obtain JWT token"; exit 1; fi
+          if [ -z "$TOKEN" ]; then echo "Failed to obtain JWT token"; docker logs xpay; exit 1; fi
           curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:8000/api/routes/compare?amount=1000" | grep -o "Stellar Hybrid Anchor"

@@ -142,19 +142,32 @@ See [docs/kpis.md](docs/kpis.md) for methodology and [docs/VALIDATION_REPORT.md]
 
 ## Quickstart
 
-**Docker (recommended, full stack):**
+**Docker (recommended, full stack — PostgreSQL + MCP + API + Web):**
 ```bash
 docker compose up --build
-# backend  → http://localhost:8000  (API docs at /docs)
+# db       → postgres:16-alpine on 5432 (healthcheck: pg_isready)
+# backend  → http://localhost:8000  (API docs at /docs) — runs `alembic upgrade head && python scripts/migrate_json_to_db.py` on start
+# mcp-server → http://localhost:8001/mcp  (Streamable HTTP, read-only tools)
 # frontend → http://localhost:3000
+# All financial math is exact Decimal before DB persistence — DB is storage only
 ```
 
-**Backend (local venv):**
+**Backend (local venv — with PostgreSQL):**
 ```bash
+# 1. Start Postgres (16-alpine)
+docker compose up -d db
+# or: docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=xpay postgres:16-alpine
+
+# 2. Install & migrate
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-full.txt  # or requirements-lite.txt for the fast path
+alembic upgrade head                  # create `users` table (uses DATABASE_URL)
+python scripts/migrate_json_to_db.py  # one-off: users.json → PostgreSQL (idempotent, keeps bcrypt hashes)
+
+# 3. Run API (DATABASE_URL defaults to postgresql+asyncpg://postgres:postgres@localhost:5432/xpay)
 uvicorn app.main:app --reload --port 8000
+# For Docker: DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/xpay is set in docker-compose.yml
 ```
 
 **Frontend:**
@@ -173,12 +186,38 @@ python3 backend/run_demo.py          # end-to-end quote → receipt in the termi
 
 **Demo scenarios:** pass `demo_scenario` in `POST /api/agent/execute` or pick it in the UI — `default` (CLEAR), `fuzzy_review` (near-match held for review), `high_risk` (manual review).
 
+## Authentication (JWT + RBAC — PostgreSQL)
+
+All `/api/*` endpoints (except `/api/health`, `/api/ready`, `/metrics`) require `Authorization: Bearer <JWT>`.
+
+Obtain a token via `POST /token` (OAuth2 password flow, `application/x-www-form-urlencoded` with `username` + `password`). The token carries `sub` (email) and `role`.
+
+Storage: PostgreSQL `users` table via `AsyncSession` (replaces `backend/data/users.json`). Passwords are `bcrypt` hashes via `passlib`; `users.json` is kept only as seed for `scripts/migrate_json_to_db.py`. No plain-text passwords are stored.
+
+Demo credentials (seeded via `backend/data/users.json` → DB via `python backend/scripts/migrate_json_to_db.py`):
+
+| Role | Email | Password | Access |
+| :--- | :--- | :--- | :--- |
+| admin | `admin@xpay.com` | `AdminPass123!` | Full: `GET/POST /api/users`, `DELETE /api/users/{email}` (cannot self-delete), plus user capabilities |
+| user | `user@xpay.com` | `UserPass123!` | Standard: `POST /api/agent/quote` (view rates), `POST /api/agent/execute` (execute), `GET /api/routes/compare` |
+| guest | `guest@xpay.com` | `GuestPass123!` | Read-only: `POST /api/agent/quote` and `GET /api/routes/compare`; `POST /api/agent/execute` → `403` |
+
+Generate hashes locally: `python backend/generate_hashes.py` (writes `users.json` with `bcrypt` hashes; re-run `python backend/scripts/migrate_json_to_db.py` to sync to DB). All DB interactions use `AsyncSession` — no synchronous SQLAlchemy in app code.
+
+Frontend: `context/AuthContext.tsx` stores JWT + role in `localStorage` + `xpay_token` cookie; `app/login/page.tsx` posts to `http://localhost:8000/token`; unauthenticated users are redirected to `/login`; Guest hides the “Send Money” form and shows “Login as a User to initiate transfers.”; Admin sees “Admin Panel” (`app/admin/page.tsx`).
+
+Deterministic math: DB is storage only — FX, fees, and net-receive still use `Decimal` in `app/services/money.py` / `incentive.py` before saving.
+
 ## API overview
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
 | `GET` | `/api/health` | Liveness + corridors + engine flags |
-| `GET` | `/api/ready` | Readiness checks |
+| `GET` | `/api/ready` | Readiness checks (`corridor_config` + `store` + `database` via `AsyncSession`) |
+| `POST` | `/token` | JWT via OAuth2 password flow (`username`/`password` → `access_token` + `role`; queries `users` table via `AsyncSession`) |
+| `GET` | `/api/users` | List users (admin only, `Authorization: Bearer`) |
+| `POST` | `/api/users` | Create user (admin only, `email` + `password` + `role` → `bcrypt` hash in PostgreSQL) |
+| `DELETE` | `/api/users/{email}` | Delete user (admin only, cannot self-delete) |
 | `POST` | `/api/agent/parse-intent` | Text/voice → structured intent (en/bn/ar) |
 | `POST` | `/api/agent/quote` | Intent → ranked routes → citations → persisted `quote_id` |
 | `POST` | `/api/agent/execute` | Compliance gate → quote binding → simulated execution → receipt (`Idempotency-Key` honored) |
@@ -205,8 +244,12 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 │   ├── app/main.py / app/config.py
 │   ├── app/agent/orchestrator.py  # LangGraph state machine (+ MCP client adapter + sequential fallback)
 │   ├── app/mcp/             # server.py (FastMCP xpay-financial-intelligence-mcp) + client.py (Streamable HTTP) + __init__.py
+│   ├── app/core/config.py   # DATABASE_URL via pydantic-settings
+│   ├── app/db/database.py   # async engine + AsyncSession (get_db) — all DB ops use AsyncSession
+│   ├── app/db/schema.sql    # production reference schema (PostgreSQL)
+│   ├── app/models/user.py   # User (SQLAlchemy 2.0 Mapped) — replaces users.json
+│   ├── alembic/ + alembic.ini # async migrations (001_init users table)
 │   ├── app/services/        # incentive, routing_scorer, compliance, gnn_risk, intent_parser, money, quotes, store, stellar, horizon, regulatory_rag, llm, explainer, roi, metrics
-│   ├── app/db/schema.sql
 │   ├── config/corridors/    # uae_bd.json / ksa_bd.json / my_bd.json (pricing as data)
 │   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json
 │   ├── rag/corpus/          # bb_* / iso20022_pacs008 / ofac_screening excerpts

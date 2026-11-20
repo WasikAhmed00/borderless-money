@@ -1,5 +1,22 @@
-# xPay — full system (backend + frontend) via `docker compose up`
+# xPay — full system (backend + frontend + mcp + postgres) via `docker compose up`
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: xpay-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: xpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     container_name: xpay-backend
     build: ./backend
@@ -7,9 +24,15 @@ services:
       - "8000:8000"
     environment:
       - XPAY_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/xpay
       # Optional bounded-LLM assist (off unless a key is provided):
       # - XPAY_LLM_API_KEY=${XPAY_LLM_API_KEY}
       # - XPAY_LLM_MODEL=gpt-4o-mini
+    depends_on:
+      db:
+        condition: service_healthy
+    # Run migrations then start server (DB is storage only, math stays Decimal)
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     container_name: xpay-frontend
@@ -34,5 +57,13 @@ services:
       - "8001:8001"
     environment:
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/xpay
+    depends_on:
+      db:
+        condition: service_healthy
     # Architecture B: Separate process — Streamable HTTP (read-only tools)
     # MCP server exposes 5 read-only tools on http://localhost:8001/mcp
+    # Tools query PostgreSQL via existing services (deterministic), not JSON snapshots
+
+volumes:
+  pgdata:

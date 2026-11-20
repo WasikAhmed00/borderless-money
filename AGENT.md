@@ -4,6 +4,7 @@
 **Project:** xPay (borderless-money)
 **Core Value Proposition:** AI-assisted, jurisdiction-aware cross-border remittance that optimizes for the highest *recipient net-receive* amount, factoring in exact FX rates, fees, and regulatory incentives.
 **Architecture:** Monorepo containing a FastAPI backend (`/backend`) and a Next.js 14 frontend (`/frontend`).
+**Data Layer:** PostgreSQL (async via SQLAlchemy 2.0) — `app/db/database.py` (AsyncEngine + AsyncSession), `app/models/` (Mapped classes), `alembic/` (versioned migrations), `app/core/config.py` (DATABASE_URL via pydantic-settings). Deterministic math (Decimal) runs before DB persistence — DB is storage only.
 **Core Routing Flow:** 
 `Intent Parse` → `Price Routes` → `Risk Screen` → `Rank` → `Execute` (Quote & Receipt Generation).
 
@@ -20,6 +21,7 @@ When generating or modifying code for this repository, you MUST adhere to the fo
     *   Validation: Pydantic (strictly enforce schemas for all I/O).
     *   Typing: Enforce Python type hints for all function signatures.
     *   Testing: `pytest`. All new features (especially routing logic) MUST include deterministic unit tests.
+    *   Database: PostgreSQL 16 via `sqlalchemy[asyncio]` + `asyncpg` + `AsyncSession` + `alembic`. **All database interactions MUST use AsyncSession** — no synchronous SQLAlchemy in app code.
 *   **Frontend (TypeScript):** 
     *   Framework: Next.js 14 (App Router), React.
     *   Styling: Tailwind CSS.
@@ -36,4 +38,4 @@ When generating or modifying code for this repository, you MUST adhere to the fo
 
 ## 5. Documentation Standards
 *   **Evergreen Documentation:** Do NOT add hackathon sprint dates, timeline references, or ephemeral status updates (e.g., "Oct 25 deliverable"). Write documentation as if the system is a living, production-ready project.
-*   **Honest Limitations:** Clearly document that this is a prototype. The sanctions matcher uses a sample list, deployment is currently Docker-based, and the app lacks authentication by default.
+*   **Honest Limitations:** Clearly document that this is a prototype. The sanctions matcher uses a sample list, deployment is currently Docker-based (PostgreSQL via `docker-compose` + async SQLAlchemy), and JWT authentication (admin/user/guest RBAC) is now present but still demo-grade (dummy SECRET_KEY, bcrypt hashes, no email verification).

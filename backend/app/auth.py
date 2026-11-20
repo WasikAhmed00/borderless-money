@@ -1,13 +1,15 @@
-"""xPay — Authentication & RBAC helpers.
+"""xPay — Authentication & RBAC (PostgreSQL + async SQLAlchemy 2.0).
 
-Storage: backend/data/users.json (mock DB)
-Security: passlib[bcrypt] for hashing, python-jose for JWT
+Storage: PostgreSQL `users` table via AsyncSession (replaces users.json).
+Security: passlib[bcrypt] for hashing, python-jose for JWT.
 Roles: admin > user > guest
+
+All database interactions MUST use AsyncSession (AGENT.md rule).
+All financial calculations still use exact Decimal before saving — DB is storage only.
 """
-import json
+
 import os
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -15,14 +17,16 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.database import get_db
+from app.models.user import User
 
 # --- Config ---
 SECRET_KEY = os.environ.get("XPAY_JWT_SECRET", "CHANGE_ME_SECRET_KEY_XPAY_DEMO_INSECURE_32CHARS_DO_NOT_USE_IN_PROD")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hour
-
-# Path to mock DB — resolves relative to this file
-USERS_FILE = Path(__file__).resolve().parent.parent / "data" / "users.json"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -46,44 +50,7 @@ class Token(BaseModel):
     email: str
 
 
-# --- File I/O helpers ---
-
-def _ensure_users_file():
-    """Ensure users.json exists; if not, create empty list."""
-    if not USERS_FILE.exists():
-        USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(USERS_FILE, "w") as f:
-            json.dump([], f)
-
-
-def read_users() -> list[dict]:
-    _ensure_users_file()
-    try:
-        with open(USERS_FILE, "r") as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                return data
-            return []
-    except (json.JSONDecodeError, FileNotFoundError):
-        return []
-
-
-def write_users(users: list[dict]) -> None:
-    _ensure_users_file()
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=2)
-
-
-def get_user_by_email(email: str) -> Optional[dict]:
-    users = read_users()
-    email_lower = email.lower().strip()
-    for u in users:
-        if u.get("email", "").lower() == email_lower:
-            return u
-    return None
-
-
-# --- Password helpers ---
+# --- Password helpers (sync — passlib is sync, calc is CPU-bound but fast) ---
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
@@ -115,10 +82,41 @@ def decode_token(token: str) -> dict:
         ) from e
 
 
-# --- Dependency injection for RBAC ---
+# --- DB helpers (async) ---
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
-    """Validates JWT and returns user dict. Raises 401 if invalid."""
+async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
+    """Async query — replaces JSON reader. Uses: await db.execute(select(User).where(User.email == email))"""
+    email_lower = email.lower().strip()
+    result = await db.execute(select(User).where(User.email == email_lower))
+    return result.scalars().first()
+
+
+async def get_all_users(db: AsyncSession) -> list[User]:
+    result = await db.execute(select(User))
+    return list(result.scalars().all())
+
+
+async def create_user_in_db(email: str, hashed_password: str, role: str, db: AsyncSession) -> User:
+    user = User(email=email.lower().strip(), hashed_password=hashed_password, role=role)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def delete_user_from_db(email: str, db: AsyncSession) -> bool:
+    user = await get_user_by_email(email, db)
+    if not user:
+        return False
+    await db.delete(user)
+    await db.commit()
+    return True
+
+
+# --- Dependency injection for RBAC (async) ---
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
+    """Validates JWT and returns User model. Raises 401 if invalid. Queries DB via AsyncSession."""
     payload = decode_token(token)
     email: str | None = payload.get("sub")
     role: str | None = payload.get("role")
@@ -128,21 +126,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = get_user_by_email(email)
+    user = await get_user_by_email(email, db)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    # Ensure role in token matches current DB (in case role changed after token issued)
-    # We return DB user to reflect current role, but also validate token role
     return user
 
 
-async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     """Ensures user role is admin."""
-    if current_user.get("role") != "admin":
+    if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
@@ -150,17 +146,11 @@ async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
     return current_user
 
 
-async def require_user(current_user: dict = Depends(get_current_user)) -> dict:
+async def require_user(current_user: User = Depends(get_current_user)) -> User:
     """Ensures user role is user or admin. Guest is NOT allowed."""
-    role = current_user.get("role")
-    if role not in ("user", "admin"):
+    if current_user.role not in ("user", "admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User or Admin privileges required. Guest role has read-only access.",
         )
     return current_user
-
-
-# Guest + user + admin can all pass get_current_user; guest is read-only by route design
-# For routes where guest can view but not execute, use get_current_user
-# For routes where only user/admin can execute, use require_user

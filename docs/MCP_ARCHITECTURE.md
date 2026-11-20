@@ -33,7 +33,7 @@ Docker Compose runs both services side-by-side (`backend` + `mcp-server` + `fron
 
 ### Read-only tools (5)
 
-All tools wrap existing deterministic services in `backend/app/services/` — no DB mutation, no transfer execution.
+All tools wrap existing deterministic services in `backend/app/services/` — now backed by PostgreSQL via `AsyncSession` (replaces `users.json`/`data/*.json` snapshots). The services themselves remain deterministic (exact Decimal math before DB persistence) — MCP tools are thin read-only wrappers, no DB mutation, no transfer execution.
 
 | # | MCP tool | Wraps | Args | Read-only guarantee |
 |---|----------|-------|------|---------------------|

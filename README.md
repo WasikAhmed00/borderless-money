@@ -103,10 +103,12 @@ Details, sequence diagram, and failure paths: [docs/architecture.md](docs/archit
 | GNN risk model (`RemittanceGNN`, PyTorch Geometric) | Scores pre-settlement risk on a transaction graph | **Experimental** — trained on synthetic data (2,400 transactions, AUC 0.9038 on held-out split; see limitations) |
 | Logistic regression / rule stand-ins | Baselines for the same synthetic task | **Experimental** — ablation shows no GNN advantage on this data |
 | OFAC fuzzy matcher | Normalized Jaro + coverage with rationale | **Implemented** — sample list only |
-| Regulatory RAG | Retrieves cited Bangladesh Bank / OFAC / ISO 20022 passages | **Implemented** — lexical fallback if embeddings unavailable |
+| Regulatory RAG | Retrieves cited Bangladesh Bank / OFAC / ISO 20022 passages | **Implemented** — uses Contextual Embeddings, Semantic Chunking, and a NetworkX-based Graph RAG to traverse interconnected Bangladesh Bank circulars (lexical fallback if embeddings unavailable) |
 | Bounded LLM | Optional schema-validated intent assistance | **Experimental** — off by default, never does arithmetic |
 
 LLM outputs are schema-validated and cannot override financial calculations; see [docs/SECURITY_AND_RESPONSIBLE_AI.md](docs/SECURITY_AND_RESPONSIBLE_AI.md).
+
+**Regulatory RAG uses Contextual Embeddings, Semantic Chunking, and a NetworkX-based Graph RAG to traverse interconnected Bangladesh Bank circulars.**
 
 ## Real vs simulated
 

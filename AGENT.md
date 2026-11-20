@@ -36,7 +36,8 @@ When generating or modifying code for this repository, you MUST adhere to the fo
 ## 4. AI Agent & Prompting Guidelines
 *   **Deterministic First:** Always prefer the deterministic rule-based parser for intent extraction. The schema-validated LLM fallback is optional and must be off by default.
 *   **Explainability:** Every quote and recommendation must return a plain-language reasoning log (Intent → Ranking → Screening → Execution).
-*   **Strict JSON Outputs:** When writing prompts for internal LLM usage (e.g., LangGraph nodes), enforce strict JSON schema outputs. 
+*   **Strict JSON Outputs:** When writing prompts for internal LLM usage (e.g., LangGraph nodes), enforce strict JSON schema outputs.
+*   **Regulatory RAG Maintenance:** When modifying regulatory documents, always run the semantic chunker and update the Graph RAG entities to ensure compliance logic remains sound. The RAG pipeline uses Contextual Embeddings, Semantic Chunking, and a NetworkX-based Graph RAG to traverse interconnected Bangladesh Bank circulars. 
 
 ## 5. Documentation Standards
 *   **Evergreen Documentation:** Do NOT add hackathon sprint dates, timeline references, or ephemeral status updates (e.g., "Oct 25 deliverable"). Write documentation as if the system is a living, production-ready project.

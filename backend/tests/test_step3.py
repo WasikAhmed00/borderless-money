@@ -145,7 +145,9 @@ class TestSourcedRAG(unittest.TestCase):
     def test_every_citation_has_an_allowed_domain(self):
         result = regulatory_rag.retrieve("2.5 percent government cash incentive formal remittance")
         self.assertTrue(result["passages"])
-        self.assertIn(result["engine"], ("all-MiniLM-L6-v2", "lexical-ngram-tf"))
+        # Upgraded RAG now uses contextual + graph hybrid; engine may be "contextual-lexical-ngram-tf+graph" etc.
+        # Keep backward compat: check that base engine is still one of the allowed ones as substring
+        self.assertTrue(any(base in result["engine"] for base in ("all-MiniLM-L6-v2", "lexical-ngram-tf")), f"engine {result['engine']} should contain base engine")
         for passage in result["passages"]:
             self.assertTrue(passage.get("domain"), f"chunk {passage['id']} has no source domain")
             self.assertIn(passage["domain"], self.ALLOWED)

@@ -73,4 +73,7 @@ jobs:
             sleep 2
           done
           curl -sf http://localhost:8000/api/health
-          curl -sf "http://localhost:8000/api/routes/compare?amount=1000" | grep -o "Stellar Hybrid Anchor"
+          # Authenticated smoke test — /api/routes/compare now requires JWT (RBAC)
+          TOKEN=$(curl -sf -X POST http://localhost:8000/token -H "Content-Type: application/x-www-form-urlencoded" -d "username=user@xpay.com&password=UserPass123!" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))")
+          if [ -z "$TOKEN" ]; then echo "Failed to obtain JWT token"; exit 1; fi
+          curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:8000/api/routes/compare?amount=1000" | grep -o "Stellar Hybrid Anchor"

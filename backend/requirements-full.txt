@@ -23,7 +23,8 @@ python-multipart>=0.0.9
 bcrypt==4.0.1
 
 # MCP — Model Context Protocol (separate streamable-HTTP server on :8001)
-mcp[cli]>=1.9
+# Pinned to <2 to avoid FastMCP→MCPServer breaking change in mcp 2.x (see migration guide)
+mcp[cli]>=1.9,<2
 
 # Async PostgreSQL (production DB — replaces users.json) + SQLite fallback for local dev
 sqlalchemy[asyncio]>=2.0

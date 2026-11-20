@@ -15,22 +15,35 @@ Permissions: Read-only; no transfer or settlement permissions.
 
 from typing import Annotated
 
-from mcp.server.fastmcp import FastMCP
+# MCP 1.x uses mcp.server.fastmcp.FastMCP, MCP 2.x renamed to mcp.server.mcpserver.MCPServer
+try:
+    from mcp.server.fastmcp import FastMCP  # type: ignore
+except ModuleNotFoundError:
+    try:
+        from mcp.server.mcpserver import MCPServer as FastMCP  # type: ignore  # mcp 2.x
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            "mcp package not found. Install with: pip install 'mcp[cli]>=1.9,<2' "
+            "(or see https://py.sdk.modelcontextprotocol.io/v2/migration/)"
+        ) from e
 
 from app.services import corridor as corridor_cfg
 from app.services import compliance, regulatory_rag, routing_scorer
 from app.services.incentive import calculate_true_net_receive
 from app.services.money import D  # deterministic Decimal helper (imported to show no-float guarantee)
 
-# FastMCP server — separate process on 8001, Streamable HTTP
-# host/port/path are set here so `python -m app.mcp.server` binds correctly
-mcp = FastMCP(
-    "xpay-financial-intelligence-mcp",
-    host="0.0.0.0",
-    port=8001,
-    # stateless_http improves compatibility with simple HTTP clients
-    stateless_http=True,
-)
+# FastMCP / MCPServer — separate process on 8001, Streamable HTTP
+# Compatible with mcp 1.x (FastMCP) and 2.x (MCPServer)
+try:
+    mcp = FastMCP(  # type: ignore[call-arg]
+        "xpay-financial-intelligence-mcp",
+        host="0.0.0.0",
+        port=8001,
+        stateless_http=True,  # mcp 1.x; ignored in 2.x
+    )
+except TypeError:
+    # MCPServer (2.x) may not accept host/port/stateless_http in __init__
+    mcp = FastMCP("xpay-financial-intelligence-mcp")  # type: ignore[call-arg]
 
 
 @mcp.tool()
@@ -235,6 +248,13 @@ User message: {{user_message}}
 
 # Entrypoint for Streamable HTTP (Architecture B)
 if __name__ == "__main__":
-    # FastMCP's run handles Streamable HTTP transport
+    # Handles both mcp 1.x (FastMCP) and 2.x (MCPServer) run signatures
     # Path is /mcp per MCP spec (client connects to http://localhost:8001/mcp)
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=8001, path="/mcp")
+    try:
+        mcp.run(transport="streamable-http", host="0.0.0.0", port=8001, path="/mcp")  # type: ignore[call-arg]
+    except TypeError:
+        try:
+            mcp.run(transport="streamable-http", host="0.0.0.0", port=8001)  # type: ignore[call-arg]
+        except TypeError:
+            # Fallback for mcp 2.x where run() may not take transport arg the same way
+            mcp.run()  # type: ignore[call-arg]

@@ -22,10 +22,10 @@ from app.models.user import User  # noqa: F401
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set sqlalchemy.url from settings if not already set in alembic.ini
-# Use async URL for online migrations; offline will use sync URL via settings.sync_url
-if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Always override sqlalchemy.url from settings (env var DATABASE_URL)
+# This ensures Docker (postgres) vs local (sqlite) is correctly picked up
+# Use async URL for online migrations; offline will use sync_url
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:

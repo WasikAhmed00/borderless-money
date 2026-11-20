@@ -15,6 +15,7 @@ When generating or modifying code for this repository, you MUST adhere to the fo
 *   **LLMs are strictly OFF the critical path for math.** The agent can parse user intent, but a deterministic engine MUST calculate fees, FX spreads, and final amounts. Reject any LLM output that attempts to hallucinate a numerical figure.
 *   **Compliance is absolute.** Fuzzy OFAC matches with a score of `≥ 0.90` must trigger a human-in-the-loop hold. Never auto-block a transaction based solely on an alias match. Exact canonical full-name matches are the only auto-blocks.
 *   **PII Minimization.** Never expose Personally Identifiable Information in application logs. Only hashes and non-identifying audit data should touch the ledger.
+*   **PostgreSQL is the single source of truth for users.** Do not create or use JSON files for user storage. Demo users (admin/user/guest) are seeded via `scripts/seed_db.py` (hardcoded credentials, hashed at runtime with `CryptContext` via `AsyncSessionLocal`, idempotent).
 
 ## 3. Tech Stack & Coding Standards
 *   **Backend (Python):** 

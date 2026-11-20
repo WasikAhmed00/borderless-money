@@ -52,21 +52,28 @@ async def seed():
             placeholders = [
                 TeamMember(name="Taskifbin", role="Creator & Full-Stack", email="taskifbin@example.com", image_url=None, order_index=0),
                 TeamMember(name="xPay Team", role="AI & Fintech", email="team@xpay.example.com", image_url=None, order_index=1),
-                TeamMember(name="Tanu Sen Riya", role="NRB Product Lead (India Corridor)", email="tanu@xpay.example.com", image_url=None, order_index=2),
+                TeamMember(name="Tanu Sen Riya", role="Backend Engineer", email="tanu@xpay.example.com", image_url=None, order_index=2),
             ]
             for m in placeholders:
                 db.add(m)
             await db.commit()
             print(f"Seeded {len(placeholders)} TeamMember(s)")
         else:
-            # Ensure Tanu exists even if table already has data (idempotent)
+            # Ensure Tanu exists even if table already has data (idempotent) — backend role
             emails = {m.email for m in members}
             if "tanu@xpay.example.com" not in emails:
-                tanu = TeamMember(name="Tanu Sen Riya", role="NRB Product Lead (India Corridor)", email="tanu@xpay.example.com", image_url=None, order_index=2)
+                tanu = TeamMember(name="Tanu Sen Riya", role="Backend Engineer", email="tanu@xpay.example.com", image_url=None, order_index=2)
                 db.add(tanu)
                 await db.commit()
-                print("Seeded Tanu Sen Riya (NRB Product Lead)")
+                print("Seeded Tanu Sen Riya (Backend Engineer)")
             else:
+                # Update role if Tanu exists but with old NRB title
+                for m in members:
+                    if m.email == "tanu@xpay.example.com" and m.role != "Backend Engineer":
+                        m.role = "Backend Engineer"
+                        await db.commit()
+                        print(f"Updated Tanu role to Backend Engineer (was {m.role})")
+                        break
                 print(f"TeamMember exists: {len(members)} row(s) — Tanu already present")
 
     await engine.dispose()

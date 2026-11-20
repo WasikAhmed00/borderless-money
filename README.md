@@ -146,7 +146,7 @@ See [docs/kpis.md](docs/kpis.md) for methodology and [docs/VALIDATION_REPORT.md]
 ```bash
 docker compose up --build
 # db       → postgres:16-alpine on 5432 (healthcheck: pg_isready)
-# backend  → http://localhost:8000  (API docs at /docs) — runs `alembic upgrade head && python scripts/migrate_json_to_db.py` on start
+# backend  → http://localhost:8000  (API docs at /docs) — runs `alembic upgrade head && python scripts/seed_db.py` on start
 # mcp-server → http://localhost:8001/mcp  (Streamable HTTP, read-only tools)
 # frontend → http://localhost:3000
 # All financial math is exact Decimal before DB persistence — DB is storage only
@@ -163,7 +163,7 @@ cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-full.txt  # or requirements-lite.txt for the fast path
 alembic upgrade head                  # create `users` table (uses DATABASE_URL)
-python scripts/migrate_json_to_db.py  # one-off: users.json → PostgreSQL (idempotent, keeps bcrypt hashes)
+python scripts/seed_db.py             # seed PostgreSQL `users` (idempotent, bcrypt hashed at runtime)
 
 # 3. Run API (DATABASE_URL defaults to postgresql+asyncpg://postgres:postgres@localhost:5432/xpay)
 uvicorn app.main:app --reload --port 8000
@@ -192,9 +192,9 @@ All `/api/*` endpoints (except `/api/health`, `/api/ready`, `/metrics`) require 
 
 Obtain a token via `POST /token` (OAuth2 password flow, `application/x-www-form-urlencoded` with `username` + `password`). The token carries `sub` (email) and `role`.
 
-Storage: PostgreSQL `users` table via `AsyncSession` (replaces `backend/data/users.json`). Passwords are `bcrypt` hashes via `passlib`; `users.json` is kept only as seed for `scripts/migrate_json_to_db.py`. No plain-text passwords are stored.
+Storage: PostgreSQL `users` table via `AsyncSession` (single source of truth). Passwords are `bcrypt` hashes via `passlib` (hashed dynamically at runtime). The database is seeded via `scripts/seed_db.py`. There are no loose JSON user files in the repository. No plain-text passwords are stored.
 
-Demo credentials (seeded via `backend/data/users.json` → DB via `python backend/scripts/migrate_json_to_db.py`):
+Demo credentials (seeded via `python backend/scripts/seed_db.py`):
 
 | Role | Email | Password | Access |
 | :--- | :--- | :--- | :--- |
@@ -202,7 +202,7 @@ Demo credentials (seeded via `backend/data/users.json` → DB via `python backen
 | user | `user@xpay.com` | `UserPass123!` | Standard: `POST /api/agent/quote` (view rates), `POST /api/agent/execute` (execute), `GET /api/routes/compare` |
 | guest | `guest@xpay.com` | `GuestPass123!` | Read-only: `POST /api/agent/quote` and `GET /api/routes/compare`; `POST /api/agent/execute` → `403` |
 
-Generate hashes locally: `python backend/generate_hashes.py` (writes `users.json` with `bcrypt` hashes; re-run `python backend/scripts/migrate_json_to_db.py` to sync to DB). All DB interactions use `AsyncSession` — no synchronous SQLAlchemy in app code.
+Generate hashes dynamically: `scripts/seed_db.py` hashes `AdminPass123!` / `UserPass123!` / `GuestPass123!` at runtime via `CryptContext`. All DB interactions use `AsyncSession` — no synchronous SQLAlchemy in app code. The database is seeded via `scripts/seed_db.py`. There are no loose JSON user files in the repository.
 
 Frontend: `context/AuthContext.tsx` stores JWT + role in `localStorage` + `xpay_token` cookie; `app/login/page.tsx` posts to `http://localhost:8000/token`; unauthenticated users are redirected to `/login`; Guest hides the “Send Money” form and shows “Login as a User to initiate transfers.”; Admin sees “Admin Panel” (`app/admin/page.tsx`).
 
@@ -253,12 +253,12 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 │   ├── alembic/ + alembic.ini # async migrations (001_init users, 002_docs)
 │   ├── app/services/        # incentive, routing_scorer, compliance, gnn_risk, intent_parser, money, quotes, store, stellar, horizon, regulatory_rag, llm, explainer, roi, metrics
 │   ├── config/corridors/    # uae_bd.json / ksa_bd.json / my_bd.json (pricing as data)
-│   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json, users.json (seed for migrate)
+│   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json
 │   ├── rag/corpus/          # bb_* / iso20022_pacs008 / ofac_screening excerpts
 │   ├── ml/                  # train_gnn.py, ablation.py, model.pt, eval.json, ablation.md
 │   ├── evals/               # eval_scenarios.py, eval_sanctions.py, eval_rag.py
 │   ├── tests/               # test_core.py, test_financial.py, test_roi.py, test_smoke.py, test_step3.py, test_step4.py
-│   ├── scripts/             # migrate_json_to_db.py (users.json → DB) + seed_docs.py (DocsConfig + TeamMember)
+│   ├── scripts/             # seed_db.py (hardcoded demo users → DB) + seed_docs.py (DocsConfig + TeamMember) + seed_team.py (Tanu)
 │   ├── requirements*.txt / Dockerfile / run_demo.py
 │   └── .venv/               # local venv (gitignored)
 ├── frontend/
@@ -310,7 +310,7 @@ python backend/scripts/seed_docs.py
 | **Wasik Ahmed** | Routing and incentive engine |
 | **Fahim Ahmad** | Frontend and voice UX |
 | **Alisha Akter** | RegTech, data, and compliance |
-| **Tanu Sen Riya** | NRB Product Lead (India Corridor) |
+| **Tanu Sen Riya** | Backend Engineer |
 
 ## Responsible AI, privacy, and limitations
 

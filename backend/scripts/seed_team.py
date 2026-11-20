@@ -1,4 +1,4 @@
-"""Seed TeamMember — adds Tanu Sen Riya (NRB Product Lead).
+"""Seed TeamMember — adds Tanu Sen Riya (Backend Engineer).
 
 Idempotent: only inserts if email not already present.
 
@@ -34,7 +34,7 @@ async def seed_tanu():
 
         tanu = TeamMember(
             name="Tanu Sen Riya",
-            role="NRB Product Lead (India Corridor)",
+            role="Backend Engineer",
             email="tanu@xpay.example.com",
             image_url=None,
             order_index=2,
@@ -42,7 +42,7 @@ async def seed_tanu():
         db.add(tanu)
         await db.commit()
         await db.refresh(tanu)
-        print(f"Seeded Tanu Sen Riya: id={tanu.id} {tanu.email} — NRB Product Lead (India Corridor)")
+        print(f"Seeded Tanu Sen Riya: id={tanu.id} {tanu.email} — Backend Engineer")
 
     await engine.dispose()
 

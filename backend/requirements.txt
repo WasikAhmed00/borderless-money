@@ -3,3 +3,4 @@
 #   requirements-full.txt: everything the README describes (Docker/CI use this)
 # See REAL_VS_SIMULATED.md for what each fallback changes.
 -r requirements-full.txt
+mcp[cli]>=1.9

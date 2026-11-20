@@ -24,3 +24,15 @@ services:
       - NEXT_PUBLIC_API_BASE=http://localhost:8000
     depends_on:
       - backend
+      - mcp-server
+
+  mcp-server:
+    container_name: xpay-mcp-server
+    build: ./backend
+    command: python -m app.mcp.server
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Architecture B: Separate process — Streamable HTTP (read-only tools)
+    # MCP server exposes 5 read-only tools on http://localhost:8001/mcp

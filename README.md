@@ -197,13 +197,14 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 ├── README.md
 ├── REAL_VS_SIMULATED.md     # claim-by-claim truth table (real vs simulated)
 ├── Makefile                 # test / eval / docker targets
-├── docker-compose.yml       # backend + frontend services
+├── docker-compose.yml       # backend (8000) + mcp-server (8001) + frontend (3000) — Architecture B (Separate Process)
 ├── plan.md / TODO.md / SUMMARY.md
 ├── .github/workflows/ci.yml # fresh-checkout CI (tests + docker build)
 ├── assets/logo/xpay-logo.png
 ├── backend/
 │   ├── app/main.py / app/config.py
-│   ├── app/agent/orchestrator.py  # LangGraph state machine (+ sequential fallback)
+│   ├── app/agent/orchestrator.py  # LangGraph state machine (+ MCP client adapter + sequential fallback)
+│   ├── app/mcp/             # server.py (FastMCP xpay-financial-intelligence-mcp) + client.py (Streamable HTTP) + __init__.py
 │   ├── app/services/        # incentive, routing_scorer, compliance, gnn_risk, intent_parser, money, quotes, store, stellar, horizon, regulatory_rag, llm, explainer, roi, metrics
 │   ├── app/db/schema.sql
 │   ├── config/corridors/    # uae_bd.json / ksa_bd.json / my_bd.json (pricing as data)
@@ -221,7 +222,7 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 │   ├── public/assets/xpay-logo.png + public/favicon.ico
 │   ├── package.json / next.config.js / tailwind.config.ts / tsconfig.json
 │   └── .env.local.example
-├── docs/                    # architecture, api-contracts, FINANCIAL_MODEL, kpis, VALIDATION_REPORT, PRODUCT_STRATEGY, business-validation, SECURITY_AND_RESPONSIBLE_AI, responsible-ai, one-pager, demo-script, competition-analysis, stellar-sensitivity, unit-economics, etc.
+├── docs/                    # architecture, api-contracts, FINANCIAL_MODEL, kpis, VALIDATION_REPORT, PRODUCT_STRATEGY, business-validation, SECURITY_AND_RESPONSIBLE_AI, responsible-ai, one-pager, demo-script, competition-analysis, stellar-sensitivity, unit-economics, MCP_ARCHITECTURE.md, prompt_library.md, etc.
 ├── data/sources.md          # provenance for FX, routing, sanctions, RAG sources
 ├── deploy/render.yaml
 ├── reports/                 # load_test.txt, simulation_1000.json, review_volume.json

@@ -235,7 +235,7 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 | **Sukonya Dutta Pushpa** (Captain) | AI orchestration and explainer |
 | **Taskif Bin Parves** | Backend and settlement adapter |
 | **Wasik Ahmed** | Routing and incentive engine |
-| **Fahim Ahmed** | Frontend and voice UX |
+| **Fahim Ahmad** | Frontend and voice UX |
 | **Alisha Akter** | RegTech, data, and compliance |
 
 ## Responsible AI, privacy, and limitations

@@ -36,16 +36,25 @@ from app.services.money import D  # deterministic Decimal helper (imported to sh
 
 # FastMCP / MCPServer — separate process on 8001, Streamable HTTP
 # Compatible with mcp 1.x (FastMCP) and 2.x (MCPServer)
+# For mcp 1.x, host/port/streamable_http_path are set in __init__ and run() only takes transport
 try:
     mcp = FastMCP(  # type: ignore[call-arg]
         "xpay-financial-intelligence-mcp",
         host="0.0.0.0",
         port=8001,
+        streamable_http_path="/mcp",
         stateless_http=True,  # mcp 1.x; ignored in 2.x
     )
 except TypeError:
-    # MCPServer (2.x) may not accept host/port/stateless_http in __init__
-    mcp = FastMCP("xpay-financial-intelligence-mcp")  # type: ignore[call-arg]
+    try:
+        mcp = FastMCP(  # type: ignore[call-arg]
+            "xpay-financial-intelligence-mcp",
+            host="0.0.0.0",
+            port=8001,
+        )
+    except TypeError:
+        # MCPServer (2.x) may not accept host/port in __init__
+        mcp = FastMCP("xpay-financial-intelligence-mcp")  # type: ignore[call-arg]
 
 
 # Health check for Docker and backend probe (Fix 1 — MCP must expose GET /health)
@@ -264,13 +273,7 @@ User message: {{user_message}}
 
 # Entrypoint for Streamable HTTP (Architecture B)
 if __name__ == "__main__":
-    # Handles both mcp 1.x (FastMCP) and 2.x (MCPServer) run signatures
-    # Path is /mcp per MCP spec (client connects to http://localhost:8001/mcp)
-    try:
-        mcp.run(transport="streamable-http", host="0.0.0.0", port=8001, path="/mcp")  # type: ignore[call-arg]
-    except TypeError:
-        try:
-            mcp.run(transport="streamable-http", host="0.0.0.0", port=8001)  # type: ignore[call-arg]
-        except TypeError:
-            # Fallback for mcp 2.x where run() may not take transport arg the same way
-            mcp.run()  # type: ignore[call-arg]
+    # FastMCP 1.x: host/port set in __init__, run() only takes transport
+    # This is the correct way per mcp 1.x docs: mcp = FastMCP(..., host="0.0.0.0", port=8001)
+    # then mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http")  # type: ignore[call-arg]

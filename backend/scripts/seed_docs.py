@@ -45,20 +45,29 @@ async def seed():
         else:
             print(f"DocsConfig exists: public={cfg.is_public}, {cfg.start_time} -> {cfg.end_time}")
 
-        # TeamMember — placeholders if empty
+        # TeamMember — placeholders if empty, plus ensure Tanu exists
         result = await db.execute(select(TeamMember))
         members = result.scalars().all()
         if not members:
             placeholders = [
                 TeamMember(name="Taskifbin", role="Creator & Full-Stack", email="taskifbin@example.com", image_url=None, order_index=0),
                 TeamMember(name="xPay Team", role="AI & Fintech", email="team@xpay.example.com", image_url=None, order_index=1),
+                TeamMember(name="Tanu Sen Riya", role="NRB Product Lead (India Corridor)", email="tanu@xpay.example.com", image_url=None, order_index=2),
             ]
             for m in placeholders:
                 db.add(m)
             await db.commit()
             print(f"Seeded {len(placeholders)} TeamMember(s)")
         else:
-            print(f"TeamMember exists: {len(members)} row(s)")
+            # Ensure Tanu exists even if table already has data (idempotent)
+            emails = {m.email for m in members}
+            if "tanu@xpay.example.com" not in emails:
+                tanu = TeamMember(name="Tanu Sen Riya", role="NRB Product Lead (India Corridor)", email="tanu@xpay.example.com", image_url=None, order_index=2)
+                db.add(tanu)
+                await db.commit()
+                print("Seeded Tanu Sen Riya (NRB Product Lead)")
+            else:
+                print(f"TeamMember exists: {len(members)} row(s) — Tanu already present")
 
     await engine.dispose()
 

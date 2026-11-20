@@ -59,6 +59,14 @@ function isWithinWindow(cfg: DocsConfig): boolean {
   return cfg.is_public;
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  if (parts.length === 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  // For 3+ words like "Tanu Sen Riya" -> first + last => TR
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function DocsPage() {
   const { token, role, isAuthenticated } = useAuth();
   const isAdmin = role === "admin" && isAuthenticated;
@@ -70,6 +78,17 @@ export default function DocsPage() {
   const [showAdminDrawer, setShowAdminDrawer] = useState(false);
   const [mermaidRendered, setMermaidRendered] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Interactive: Problem slider + Live Quote Simulator + Arch tooltip
+  const [problemAmount, setProblemAmount] = useState(1000);
+  const [simInput, setSimInput] = useState("Send 1,000 AED to bKash");
+  const [simResult, setSimResult] = useState<string | null>(null);
+  const [archTooltip, setArchTooltip] = useState<{ visible: boolean; text: string; x: number; y: number }>({
+    visible: false,
+    text: "",
+    x: 0,
+    y: 0,
+  });
 
   // Admin form state
   const [editPublic, setEditPublic] = useState(true);
@@ -395,6 +414,38 @@ export default function DocsPage() {
             <p className="mt-3 text-sm leading-relaxed text-[#33415C]">
               Bangladesh received &gt; $20B in remittances annually; the UAE corridor (AED→BDT) is high-volume but opaque. Workers sending 1,000 AED home lose 30–60 AED to <strong>hidden FX markups and stacked fees</strong>, and payout rails (bKash, Nagad, bank) have different settlement times and incentive eligibility. Existing apps show headline fees, not the <em>net taka that arrives</em>.
             </p>
+            {/* Interactive Problem Slider */}
+            <div className="mt-6 rounded-xl bg-[#F4F7FB] border border-[#DCE3EC] p-4">
+              <label className="block text-xs font-semibold text-[#0C2340] mb-2 flex items-center justify-between">
+                <span>See the hidden cost (AED)</span>
+                <span className="font-mono text-[#0070E0]">{problemAmount} AED</span>
+              </label>
+              <input
+                type="range"
+                min={100}
+                max={5000}
+                step={100}
+                value={problemAmount}
+                onChange={(e) => setProblemAmount(parseInt(e.target.value))}
+                className="w-full h-2 bg-[#DCE3EC] rounded-lg appearance-none cursor-pointer accent-[#0070E0]"
+              />
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="rounded-lg bg-white border border-[#DCE3EC] p-2.5">
+                  <p className="text-[#64748B]">You send</p>
+                  <p className="font-mono font-semibold text-[#0C2340]">{problemAmount} AED</p>
+                </div>
+                <div className="rounded-lg bg-[#FDECEA] border border-[#B42318]/20 p-2.5">
+                  <p className="text-[#B42318]">Hidden fees (4%)</p>
+                  <p className="font-mono font-semibold text-[#B42318]">{(problemAmount * 0.04).toFixed(2)} AED</p>
+                </div>
+                <div className="rounded-lg bg-[#E7F6EE] border border-[#067647]/20 p-2.5">
+                  <p className="text-[#067647]">Actual received</p>
+                  <p className="font-mono font-semibold text-[#0C2340]">{(problemAmount * 0.96 * 30.25).toFixed(2)} BDT</p>
+                  <p className="text-[11px] text-[#64748B]">vs {(problemAmount * 30.25).toFixed(2)} BDT expected</p>
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-[#94A3B8]">Example at 4% hidden cost × 30.25 BDT/AED — exact Decimal in production, slider is illustrative.</p>
+            </div>
           </section>
 
           <section id="solution" className="bg-white border border-[#DCE3EC] rounded-xl p-6 sm:p-8 scroll-mt-24">
@@ -417,6 +468,33 @@ export default function DocsPage() {
                 <p className="text-xs font-semibold text-[#0C2340]">Compliance-first</p>
                 <p className="text-xs text-[#64748B] mt-1">OFAC fuzzy + GNN risk before quote.</p>
               </div>
+            </div>
+            {/* Live Quote Simulator Mockup */}
+            <div className="mt-6 rounded-xl border border-[#0070E0]/20 bg-[#E8F1FC] p-4">
+              <p className="text-xs font-semibold text-[#0C2340] flex items-center gap-2">
+                <Zap size={14} className="text-[#0070E0]" /> Live Quote Simulator (Mockup)
+              </p>
+              <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                <input
+                  value={simInput}
+                  onChange={(e) => setSimInput(e.target.value)}
+                  placeholder='Send 1,000 AED to bKash'
+                  className="flex-1 rounded-lg border border-[#0070E0]/20 bg-white px-3 py-2 text-sm text-[#0C2340] placeholder:text-[#94A3B8] focus:border-[#0070E0] focus:ring-2 focus:ring-[#0070E0]/20 outline-none"
+                />
+                <button
+                  onClick={() => setSimResult("Route 1: bKash (Net: 29,450 BDT). Route 2: Bank (Net: 29,100 BDT).")}
+                  className="rounded-lg bg-[#0C2340] px-4 py-2 text-sm font-semibold text-white hover:bg-[#33415C] transition"
+                >
+                  Simulate Route
+                </button>
+              </div>
+              {simResult && (
+                <div className="mt-3 rounded-lg bg-white border border-[#0070E0]/20 p-3 font-mono text-xs leading-relaxed text-[#0C2340]">
+                  <p className="font-semibold text-[#067647]">✓ {simResult.split(".")[0].trim()}.</p>
+                  <p className="text-[#64748B]">{simResult.split(".")[1]?.trim()}.</p>
+                  <p className="text-[11px] text-[#94A3B8] mt-1">Mocked via frontend state — real quotes use exact Decimal via /api/agent/quote.</p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -491,7 +569,8 @@ export default function DocsPage() {
                 <p className="text-xs text-[#64748B] mt-1">In-memory quotes (deterministic)</p>
               </div>
               <div className="rounded-xl border p-4" style={{ background: liveData?.mcp_status === "Active" ? "#E7F6EE" : "#FDECEA", borderColor: liveData?.mcp_status === "Active" ? "#06764720" : "#B4231820" }}>
-                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: liveData?.mcp_status === "Active" ? "#067647" : "#B42318" }}>
+                <p className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: liveData?.mcp_status === "Active" ? "#067647" : "#B42318" }}>
+                  <span className={`h-2 w-2 rounded-full ${liveData?.mcp_status === "Active" ? "bg-[#067647] animate-pulse" : "bg-[#B42318] animate-pulse"}`} />
                   MCP Status
                 </p>
                 <p className="mt-1 text-lg font-bold flex items-center gap-2" style={{ color: liveData?.mcp_status === "Active" ? "#067647" : "#B42318" }}>
@@ -520,13 +599,8 @@ export default function DocsPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.image_url} alt={m.name} className="h-20 w-20 aspect-square object-cover rounded-full border-2 border-white shadow-sm" />
                     ) : (
-                      <div className="h-20 w-20 aspect-square rounded-full bg-[#0C2340] text-white flex items-center justify-center text-xl font-bold">
-                        {m.name
-                          .split(" ")
-                          .map((p) => p[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
+                      <div className="h-20 w-20 aspect-square rounded-full bg-gradient-to-br from-[#0070E0] to-[#0C2340] text-white flex items-center justify-center text-xl font-bold shadow-sm">
+                        {getInitials(m.name)}
                       </div>
                     )}
                     <p className="mt-3 text-sm font-semibold text-[#0C2340]">{m.name}</p>
@@ -543,8 +617,20 @@ export default function DocsPage() {
             <h2 className="text-xl font-bold text-[#0C2340] flex items-center gap-2">
               <Server size={18} className="text-[#0C2340]" /> Architecture
             </h2>
-            <p className="mt-1 text-xs text-[#94A3B8]">Next.js → FastAPI (JWT) → PostgreSQL + LangGraph → MCP (8001) → External APIs · Rendered via Mermaid.js</p>
-            <div className="mt-4 rounded-lg border border-[#DCE3EC] bg-[#F4F7FB] p-4 overflow-x-auto">
+            <p className="mt-1 text-xs text-[#94A3B8]">Next.js → FastAPI (JWT) → PostgreSQL + LangGraph → MCP (8001) → External APIs · Rendered via Mermaid.js (hover FastAPI)</p>
+            <div
+              className="mt-4 rounded-lg border border-[#DCE3EC] bg-[#F4F7FB] p-4 overflow-x-auto relative"
+              onMouseMove={(e) => {
+                const target = e.target as HTMLElement;
+                const text = target.textContent || "";
+                if (text.includes("FastAPI") || text.includes("8000")) {
+                  setArchTooltip({ visible: true, text: "Handles JWT Auth, RBAC, and routes traffic to the MCP server.", x: e.clientX, y: e.clientY });
+                } else if (archTooltip.visible) {
+                  setArchTooltip({ visible: false, text: "", x: 0, y: 0 });
+                }
+              }}
+              onMouseLeave={() => setArchTooltip({ visible: false, text: "", x: 0, y: 0 })}
+            >
               <pre className="mermaid text-sm">
                 {`graph TB
   A[Next.js 14<br/>App Router + Tailwind<br/>JWT via AuthContext] --> B[FastAPI<br/>JWT Auth + RBAC<br/>:8000]
@@ -562,6 +648,14 @@ export default function DocsPage() {
               </pre>
               {!mermaidRendered && <p className="mt-2 text-xs text-[#94A3B8]">Mermaid loading...</p>}
             </div>
+            {archTooltip.visible && (
+              <div
+                className="fixed z-50 rounded-lg bg-[#0C2340] px-3 py-2 text-xs font-medium text-white shadow-lg pointer-events-none transition-opacity"
+                style={{ left: archTooltip.x + 12, top: archTooltip.y + 12 }}
+              >
+                {archTooltip.text}
+              </div>
+            )}
           </section>
 
           <section id="data-flow" className="bg-white border border-[#DCE3EC] rounded-xl p-6 sm:p-8 scroll-mt-24">

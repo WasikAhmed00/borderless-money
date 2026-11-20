@@ -33,3 +33,4 @@ alembic>=1.13
 psycopg2-binary>=2.9
 pydantic-settings>=2.1
 aiosqlite>=0.20
+httpx>=0.24

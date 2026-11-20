@@ -140,31 +140,49 @@ async def get_live_data(db: AsyncSession = Depends(get_db)):
     except Exception:
         total_quotes = 0
 
-    # MCP status — probe http://mcp-server:8001/mcp or localhost:8001/mcp
-    mcp_status = "Inactive"
-    mcp_url = "http://mcp-server:8001/mcp"
-    # Try mcp-server host first (Docker), then localhost
-    import urllib.request
-    import urllib.error
+    # MCP status — probe http://localhost:8001/mcp via lightweight async HTTP (httpx, 1s timeout)
+    # Task requires httpx with short timeout; mcp-server is at 8001 via Streamable HTTP
+    mcp_status = "Inactive (Offline)"
+    mcp_urls = ["http://localhost:8001/mcp", "http://mcp-server:8001/mcp"]
+    try:
+        import httpx  # type: ignore
 
-    for url in [mcp_url, "http://localhost:8001/mcp"]:
-        try:
-            # Simple GET to check if server responds (MCP Streamable HTTP expects POST, but GET should at least not be connection refused)
-            # Use short timeout
-            with urllib.request.urlopen(url, timeout=2) as resp:  # type: ignore
-                # If we get any response (even 405), server is up
-                mcp_status = "Active"
-                break
-        except urllib.error.HTTPError as e:
-            # 405 Method Not Allowed or 400 still means server is up
-            if e.code in (400, 405, 406):
-                mcp_status = "Active"
-                break
-            continue
-        except Exception:
-            continue
-    # Fallback: try to check if mcp client can list tools (more accurate but requires mcp installed)
-    # If still Inactive, leave as is
+        for url in mcp_urls:
+            try:
+                async with httpx.AsyncClient(timeout=1.0) as client:
+                    # MCP Streamable HTTP expects POST with JSON-RPC, but a GET/POST probe
+                    # that gets any HTTP response (even 405) proves the server is listening.
+                    # Use POST with minimal JSON-RPC to be more accurate.
+                    resp = await client.post(url, json={"jsonrpc": "2.0", "id": 1, "method": "ping"}, headers={"Accept": "application/json, text/event-stream"})
+                    # Any response (200, 400, 405) means Active; connection failure means Offline
+                    if resp.status_code in (200, 400, 405, 406, 404):
+                        mcp_status = "Active"
+                        break
+                    # Also try GET as fallback
+                    resp = await client.get(url)
+                    if resp.status_code in (200, 400, 405, 406, 404):
+                        mcp_status = "Active"
+                        break
+            except Exception:
+                continue
+        # If httpx not available or all probes failed, mcp_status stays Inactive (Offline)
+    except ImportError:
+        # Fallback to urllib if httpx not installed (should not happen if requirements include httpx)
+        import urllib.request
+        import urllib.error
+
+        for url in mcp_urls:
+            try:
+                with urllib.request.urlopen(url, timeout=1) as resp:  # type: ignore
+                    mcp_status = "Active"
+                    break
+            except urllib.error.HTTPError as e:
+                if e.code in (400, 405, 406, 404):
+                    mcp_status = "Active"
+                    break
+                continue
+            except Exception:
+                continue
 
     return {
         "total_users": total_users,

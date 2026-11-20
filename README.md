@@ -310,6 +310,7 @@ python backend/scripts/seed_docs.py
 | **Wasik Ahmed** | Routing and incentive engine |
 | **Fahim Ahmad** | Frontend and voice UX |
 | **Alisha Akter** | RegTech, data, and compliance |
+| **Tanu Sen Riya** | NRB Product Lead (India Corridor) |
 
 ## Responsible AI, privacy, and limitations
 

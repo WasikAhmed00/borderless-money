@@ -248,29 +248,58 @@ Cross-cutting: `X-Request-ID` on every response, per-IP rate limiting on `/api/*
 │   ├── app/db/database.py   # async engine + AsyncSession (get_db) — all DB ops use AsyncSession
 │   ├── app/db/schema.sql    # production reference schema (PostgreSQL)
 │   ├── app/models/user.py   # User (SQLAlchemy 2.0 Mapped) — replaces users.json
-│   ├── alembic/ + alembic.ini # async migrations (001_init users table)
+│   ├── app/models/docs.py   # DocsConfig, TeamMember (live /docs, PostgreSQL)
+│   ├── app/api/docs.py      # GET /api/docs/* (public) + PUT/POST/DELETE (admin, require_admin)
+│   ├── alembic/ + alembic.ini # async migrations (001_init users, 002_docs)
 │   ├── app/services/        # incentive, routing_scorer, compliance, gnn_risk, intent_parser, money, quotes, store, stellar, horizon, regulatory_rag, llm, explainer, roi, metrics
 │   ├── config/corridors/    # uae_bd.json / ksa_bd.json / my_bd.json (pricing as data)
-│   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json
+│   ├── data/                # intent_eval.json, sanctions_eval.json, ofac_sample.json, fx_rates.json, recipients.json, rag_eval.json, users.json (seed for migrate)
 │   ├── rag/corpus/          # bb_* / iso20022_pacs008 / ofac_screening excerpts
 │   ├── ml/                  # train_gnn.py, ablation.py, model.pt, eval.json, ablation.md
 │   ├── evals/               # eval_scenarios.py, eval_sanctions.py, eval_rag.py
 │   ├── tests/               # test_core.py, test_financial.py, test_roi.py, test_smoke.py, test_step3.py, test_step4.py
+│   ├── scripts/             # migrate_json_to_db.py (users.json → DB) + seed_docs.py (DocsConfig + TeamMember)
 │   ├── requirements*.txt / Dockerfile / run_demo.py
 │   └── .venv/               # local venv (gitignored)
 ├── frontend/
-│   ├── app/                 # page.tsx, layout.tsx, globals.css, roi/page.tsx
+│   ├── app/                 # page.tsx, layout.tsx, globals.css, roi/page.tsx, docs/page.tsx (YC pitch + whitepaper + live dashboard)
 │   ├── components/          # BrandMark, AgentPipeline, ChainTrail, MicButton, FlowDiagram
 │   ├── lib/                 # api.ts, i18n.ts, types.ts
 │   ├── public/assets/xpay-logo.png + public/favicon.ico
 │   ├── package.json / next.config.js / tailwind.config.ts / tsconfig.json
 │   └── .env.local.example
-├── docs/                    # architecture, api-contracts, FINANCIAL_MODEL, kpis, VALIDATION_REPORT, PRODUCT_STRATEGY, business-validation, SECURITY_AND_RESPONSIBLE_AI, responsible-ai, one-pager, demo-script, competition-analysis, stellar-sensitivity, unit-economics, MCP_ARCHITECTURE.md, prompt_library.md, etc.
+├── docs/                    # architecture, api-contracts, FINANCIAL_MODEL, kpis, VALIDATION_REPORT, PRODUCT_STRATEGY, business-validation, SECURITY_AND_RESPONSIBLE_AI, responsible-ai, one-pager, demo-script, competition-analysis, stellar-sensitivity, unit-economics, MCP_ARCHITECTURE.md (Architecture B), prompt_library.md (parse_remittance_intent), etc.
 ├── data/sources.md          # provenance for FX, routing, sanctions, RAG sources
 ├── deploy/render.yaml
 ├── reports/                 # load_test.txt, simulation_1000.json, review_volume.json
 └── scripts/                 # load_test_p95.py, simulate_1000.py, review_volume.py, stellar_sensitivity.py
 ```
+
+## Live Documentation (/docs)
+
+Accessible at `{frontend_url}/docs` (e.g., `http://localhost:3000/docs` locally, or your deployed frontend URL). The module is a YC-style pitch deck + deep technical whitepaper + live system dashboard in one page.
+
+**Access control:** `GET /api/docs/config` is public. If `is_public` is `false` or the current time is outside `[start_time, end_time]`, the frontend shows a styled `403 Documentation Unavailable` page. **Admins bypass this** — when signed in as `admin`, the page remains viewable and an admin drawer appears.
+
+**PostgreSQL source of truth (no JSON):** `DocsConfig` (`is_public`, `start_time`, `end_time`) and `TeamMember` (`name`, `role`, `email`, `image_url`, `order_index`) live in PostgreSQL via `AsyncSession` (`app/models/docs.py`, `alembic` `002_docs`). All writes are `require_admin` (JWT).
+
+**Public dashboard (live-data):** `GET /api/docs/live-data` returns `total_users` (count from `users` table via `AsyncSession`), `total_quotes` (in-memory store, deterministic), and `mcp_status` (probe of `http://mcp-server:8001/mcp` or `localhost:8001/mcp`) — displayed as “X Users”, “Y Quotes Generated”, “MCP Status: Active”. Financial figures elsewhere remain exact Decimal.
+
+**Admin panel (gear drawer, visible only if `role === admin`):**
+- Toggle `is_public`, set `start_time`/`end_time` (`PUT /api/docs/config`)
+- Add team member (`POST /api/docs/team` with `name, role, email, image_url, order_index`)
+- Remove team member (`DELETE /api/docs/team/{id}`)
+- Export to PDF via `html2pdf.js` (optional, client-side)
+
+**Layout:** sticky left sidebar (Problem, Solution, Why Now, Competition, Live Traction, Team, Architecture, Data Flow, Tech Stack, API Docs) with smooth-scroll anchors; main content uses Tailwind, `aspect-square object-cover rounded-full` team cards with fallback initials avatar, and a Mermaid.js diagram (`Next.js → FastAPI + JWT → PostgreSQL + LangGraph → MCP Server (8001) → External APIs`).
+
+**Seed:** `python backend/scripts/seed_docs.py` creates a default `DocsConfig` (`is_public=True`, `now()` to `now()+30d`) and two placeholder members if tables are empty. `docker-compose.yml` runs `alembic upgrade head` on backend start, so after `docker compose up --build` the docs tables exist; run the seed manually for local SQLite:
+```bash
+alembic upgrade head
+python backend/scripts/seed_docs.py
+```
+
+**Docs as prompt library:** `parse_remittance_intent` (LLM extraction prompt) is versioned in `docs/prompt_library.md` and also exposed via MCP (`@mcp.prompt()` in `app/mcp/server.py`).
 
 ## Team — CTRL V
 

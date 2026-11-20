@@ -7,6 +7,7 @@
 **Data Layer:** PostgreSQL (async via SQLAlchemy 2.0) — `app/db/database.py` (AsyncEngine + AsyncSession), `app/models/` (Mapped classes), `alembic/` (versioned migrations), `app/core/config.py` (DATABASE_URL via pydantic-settings). Deterministic math (Decimal) runs before DB persistence — DB is storage only.
 **Core Routing Flow:** 
 `Intent Parse` → `Price Routes` → `Risk Screen` → `Rank` → `Execute` (Quote & Receipt Generation).
+**Live Docs:** `/docs` is a live module (YC pitch + whitepaper + dashboard) — configuration (`DocsConfig`: `is_public`, `start_time`, `end_time`) and team (`TeamMember`) are stored in PostgreSQL via `AsyncSession` and served through `app/api/docs.py` (public reads, admin writes). Live metrics (`/api/docs/live-data`) are exact Decimal where money is involved.
 
 ## 2. Critical Fintech Rules (Zero Tolerance)
 When generating or modifying code for this repository, you MUST adhere to the following non-negotiable rules:

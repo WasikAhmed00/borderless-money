@@ -7,6 +7,12 @@ Endpoints (contracts in docs/api-contracts.md):
   GET  /api/users                            (Admin only)
   POST /api/users                            (Admin only)
   DELETE /api/users/{email}                  (Admin only)
+  GET  /api/docs/config                      (Public — live docs scheduling)
+  GET  /api/docs/live-data                   (Public — dashboard metrics, exact Decimal)
+  GET  /api/docs/team                        (Public — team grid)
+  PUT  /api/docs/config                      (Admin only — toggle/schedule)
+  POST /api/docs/team                        (Admin only)
+  DELETE /api/docs/team/{id}                 (Admin only)
   POST /api/agent/parse-intent               (Auth: any role)
   POST /api/agent/quote                      (Auth: any role — guest read-only)
   POST /api/agent/execute                    (Auth: user/admin only)
@@ -37,6 +43,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import auth as auth_module
 from app import config
 from app.agent import orchestrator
+from app.api.docs import router as docs_router
 from app.db.database import get_db
 from app.models.user import User
 from app.services import compliance, gnn_risk, horizon, intent_parser, llm, metrics, quotes, routing_scorer, store
@@ -47,6 +54,9 @@ app = FastAPI(
     description="Remittance intelligence that maximizes the money that actually arrives. UAE (AED) → Bangladesh (BDT).",
     version="0.2.0",
 )
+# Live /docs module (YC pitch + whitepaper + dashboard) — PostgreSQL source of truth
+app.include_router(docs_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,

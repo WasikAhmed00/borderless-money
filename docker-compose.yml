@@ -31,8 +31,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Run migrations then start server (DB is storage only, math stays Decimal)
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    # Run migrations + seed users + live docs then start server (DB is storage only, math stays Decimal)
+    command: sh -c "alembic upgrade head && python scripts/migrate_json_to_db.py && python scripts/seed_docs.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     container_name: xpay-frontend

@@ -1,0 +1,18 @@
+# Backend .dockerignore — keep image slim but NEVER ignore app/mcp/
+# Fix 4: Verified app/mcp/ is NOT ignored — MCP server code must be copied
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+.env
+.env.local
+.git
+.gitignore
+.mypy_cache
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox

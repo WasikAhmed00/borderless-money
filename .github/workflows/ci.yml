@@ -2,6 +2,11 @@
 # (Runs on GitHub; the same commands pass locally via `make ci-local`.)
 name: ci
 
+# Fix 2: GHCR push requires packages: write (safe even if not pushing)
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [main]

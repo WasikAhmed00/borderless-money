@@ -43,13 +43,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     formData.append("username", emailInput);
     formData.append("password", password);
 
-    const res = await fetch(`${API_BASE}/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData.toString(),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      });
+    } catch (e) {
+      // Network-level failure (backend down, CORS, DB not running)
+      const base = API_BASE || "(same-origin via /token proxy)";
+      throw new Error(
+        `Failed to fetch (${base}/token) — is the backend running? ` +
+          `Try: docker compose up --build  OR  cd backend && alembic upgrade head && python scripts/migrate_json_to_db.py && uvicorn app.main:app --reload --port 8000  ` +
+          `Then check http://localhost:8000/api/health — ` +
+          (e instanceof Error ? e.message : String(e))
+      );
+    }
 
     if (!res.ok) {
       let detail = "Login failed";

@@ -24,3 +24,18 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_BASE
         value: https://borderless-money-api.onrender.com
+
+  - type: web
+    name: borderless-money-mcp
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: python -m app.mcp.server
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: MCP_TRANSPORT
+        value: streamable-http
+      - key: PYTHONUNBUFFERED
+        value: "1"

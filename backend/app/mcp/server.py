@@ -13,6 +13,7 @@ Transport: Streamable HTTP at http://localhost:8001/mcp
 Permissions: Read-only; no transfer or settlement permissions.
 """
 
+import os
 from typing import Annotated
 
 # MCP 1.x uses mcp.server.fastmcp.FastMCP, MCP 2.x renamed to mcp.server.mcpserver.MCPServer
@@ -34,14 +35,15 @@ from app.services import compliance, regulatory_rag, routing_scorer
 from app.services.incentive import calculate_true_net_receive
 from app.services.money import D  # deterministic Decimal helper (imported to show no-float guarantee)
 
-# FastMCP / MCPServer — separate process on 8001, Streamable HTTP
+# FastMCP / MCPServer — separate process on 8001 locally, Render's PORT in production
 # Compatible with mcp 1.x (FastMCP) and 2.x (MCPServer)
 # For mcp 1.x, host/port/streamable_http_path are set in __init__ and run() only takes transport
+_port = int(os.environ.get("PORT", os.environ.get("MCP_PORT", "8001")))
 try:
     mcp = FastMCP(  # type: ignore[call-arg]
         "xpay-financial-intelligence-mcp",
         host="0.0.0.0",
-        port=8001,
+        port=_port,
         streamable_http_path="/mcp",
         stateless_http=True,  # mcp 1.x; ignored in 2.x
     )
@@ -50,7 +52,7 @@ except TypeError:
         mcp = FastMCP(  # type: ignore[call-arg]
             "xpay-financial-intelligence-mcp",
             host="0.0.0.0",
-            port=8001,
+            port=_port,
         )
     except TypeError:
         # MCPServer (2.x) may not accept host/port in __init__

@@ -23,9 +23,9 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - XPAY_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - XPAY_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://borderless-money-web.onrender.com
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/xpay
-      - MCP_SERVER_URL=http://mcp-server:8001
+      - MCP_SERVER_URL=http://xpay-mcp-server:8001
       # Optional bounded-LLM assist (off unless a key is provided):
       # - XPAY_LLM_API_KEY=${XPAY_LLM_API_KEY}
       # - XPAY_LLM_MODEL=gpt-4o-mini

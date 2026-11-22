@@ -141,21 +141,22 @@ async def get_live_data(db: AsyncSession = Depends(get_db)):
         total_quotes = 0
 
     # MCP status — probe via GET {MCP_SERVER_URL}/health (httpx, 1s timeout)
-    # Fix: Use MCP_SERVER_URL env var (Docker: http://mcp-server:8001, local: http://localhost:8001)
-    # and hit the dedicated /health route (not /mcp POST) for a reliable 200 OK.
+    # Render/Docker: MCP_SERVER_URL=http://xpay-mcp-server:8001 (internal) or http://mcp-server:8001 (compose service)
+    # Local dev fallback: http://localhost:8001
     import os
 
     mcp_status = "Inactive (Offline)"
-    mcp_base = os.environ.get("MCP_SERVER_URL", "http://localhost:8001")
-    # Ensure no trailing slash, then append /health
-    mcp_health_url = mcp_base.rstrip("/") + "/health"
-    # Also try the alternate host for Docker vs local
+    MCP_SERVER_INTERNAL_URL = os.getenv("MCP_SERVER_URL", "http://xpay-mcp-server:8001")
+    mcp_health_url = MCP_SERVER_INTERNAL_URL.rstrip("/") + "/health"
     mcp_urls = [mcp_health_url]
-    # Add fallback for the other network (if mcp_base is localhost, also try mcp-server; vice versa)
-    if "localhost" in mcp_base:
-        mcp_urls.append(mcp_base.replace("localhost", "mcp-server").rstrip("/") + "/health")
-    elif "mcp-server" in mcp_base:
-        mcp_urls.append(mcp_base.replace("mcp-server", "localhost").rstrip("/") + "/health")
+    # Fallbacks for cross-env robustness (Render internal vs Compose service name vs localhost)
+    for alt in [
+        "http://xpay-mcp-server:8001/health",
+        "http://mcp-server:8001/health",
+        "http://localhost:8001/health",
+    ]:
+        if alt not in mcp_urls:
+            mcp_urls.append(alt)
 
     try:
         import httpx  # type: ignore

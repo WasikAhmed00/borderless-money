@@ -36,11 +36,12 @@ DEMO_RECIPIENTS = _c["demo_recipients"]
 DB_PATH = os.environ.get("XPAY_DB_PATH", "")
 
 # --- CORS -------------------------------------------------------------------
+# Production frontend on Render + local dev
 CORS_ORIGINS = [
     o.strip()
     for o in os.environ.get(
         "XPAY_CORS_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000",
+        "http://localhost:3000,http://127.0.0.1:3000,https://borderless-money-web.onrender.com",
     ).split(",")
     if o.strip()
 ]

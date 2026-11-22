@@ -49,7 +49,10 @@ interface TeamMember {
   order_index: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "http://localhost:8000";
 
 // Helper to check if current time is within window
 function isWithinWindow(cfg: DocsConfig): boolean {

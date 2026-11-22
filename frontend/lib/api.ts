@@ -1,6 +1,8 @@
 import type { AgentStateResponse, DemoScenario } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
+// Production uses NEXT_PUBLIC_API_BASE_URL (Render), fallback to NEXT_PUBLIC_API_BASE for local dev
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || "";
 
 // Helper to get auth headers from localStorage (client-side only)
 function authHeaders(): Record<string, string> {

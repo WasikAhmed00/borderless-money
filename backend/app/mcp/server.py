@@ -271,9 +271,14 @@ User message: {{user_message}}
 """
 
 
-# Entrypoint for Streamable HTTP (Architecture B)
+# Entrypoint — supports both Streamable HTTP (default, Docker) and SSE (Render)
 if __name__ == "__main__":
+    # Allow Render to use SSE via env MCP_TRANSPORT=sse (private service networking)
+    # Default is streamable-http for local Docker /docs probe at /health + /mcp
+    import os as _os
+
+    _transport = _os.environ.get("MCP_TRANSPORT", "streamable-http").strip().lower()
+    if _transport not in ("streamable-http", "sse", "stdio"):
+        _transport = "streamable-http"
     # FastMCP 1.x: host/port set in __init__, run() only takes transport
-    # This is the correct way per mcp 1.x docs: mcp = FastMCP(..., host="0.0.0.0", port=8001)
-    # then mcp.run(transport="streamable-http")
-    mcp.run(transport="streamable-http")  # type: ignore[call-arg]
+    mcp.run(transport=_transport)  # type: ignore[call-arg]

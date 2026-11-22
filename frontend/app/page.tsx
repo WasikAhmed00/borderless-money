@@ -220,7 +220,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [healthOk, setHealthOk] = useState<boolean | null>(null);
   const t = STRINGS[lang];
-  const checkHealth = () => { fetch(`${process.env.NEXT_PUBLIC_API_BASE || ""}/api/health`).then(r => r.ok ? r.json() : Promise.reject()).then(() => setHealthOk(true)).catch(() => setHealthOk(false)); };
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || "";
+  const checkHealth = () => { fetch(`${API_BASE}/api/health`).then(r => r.ok ? r.json() : Promise.reject()).then(() => setHealthOk(true)).catch(() => setHealthOk(false)); };
   useEffect(() => { const l = savedLang(); setLang(l); applyDocLang(l); const s = new URLSearchParams(window.location.search).get("scenario"); if (s === "fuzzy_review" || s === "fuzzy") setScenario("fuzzy_review"); else if (s === "high_risk") setScenario("high_risk"); checkHealth(); }, []);
   const switchLang = (l: Lang) => { setLang(l); window.localStorage.setItem("xpay-lang", l); applyDocLang(l); };
   const amountValue = Number(amount.replace(/,/g, ""));

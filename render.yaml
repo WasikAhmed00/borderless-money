@@ -4,7 +4,7 @@ services:
   - type: web
     name: borderless-money-api
     env: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./backend/Dockerfile.render
     dockerContext: ./backend
     plan: free
     healthCheckPath: /api/health
@@ -13,6 +13,8 @@ services:
         value: https://borderless-money-web.onrender.com,http://localhost:3000
       - key: XPAY_RATE_LIMIT
         value: 240/minute
+      - key: USE_TRAINED_GNN
+        value: "false"
 
   - type: web
     name: borderless-money-web
@@ -28,7 +30,7 @@ services:
   - type: web
     name: borderless-money-mcp
     env: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./backend/Dockerfile.render
     dockerContext: ./backend
     dockerCommand: python -m app.mcp.server
     plan: free

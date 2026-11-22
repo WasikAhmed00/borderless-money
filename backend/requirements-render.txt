@@ -1,0 +1,24 @@
+# Render free-tier runtime dependencies.
+# Deliberately omits optional PyTorch/PyG/Sentence-Transformers packages because
+# they exceed Render free web-service memory at quote time. The application has
+# deterministic heuristic-GNN and lexical-RAG fallbacks for this deployment.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+langgraph>=0.2
+networkx>=3.3
+# Auth & RBAC
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+python-multipart>=0.0.9
+bcrypt==4.0.1
+# MCP — Model Context Protocol
+mcp[cli]>=1.9,<2
+# Async PostgreSQL (SQLite fallback remains available for the free demo)
+sqlalchemy[asyncio]>=2.0
+asyncpg>=0.29
+alembic>=1.13
+psycopg2-binary>=2.9
+pydantic-settings>=2.1
+aiosqlite>=0.20
+httpx>=0.24
